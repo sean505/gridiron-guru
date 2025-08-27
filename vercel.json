@@ -9,10 +9,5 @@
       "src": "/(.*)",
       "dest": "/frontend/$1"
     }
-  ],
-  "functions": {
-    "api/main.py": {
-      "runtime": "python@3.9"
-    }
-  }
+  ]
 }
