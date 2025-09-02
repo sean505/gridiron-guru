@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && rm -rf node_modules package-lock.json && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -18,8 +15,12 @@
       "dest": "/api/main.py"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/frontend/dist/assets/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/frontend/dist/$1"
+      "dest": "/frontend/dist/index.html"
     }
   ]
 }
