@@ -47,9 +47,7 @@ export default function WeeklyPredictor() {
   const loadCurrentWeekGames = async () => {
     try {
       setLoading(true);
-      console.log('Loading games...');
       const gamesData = await nflApi.getGames();
-      console.log('Games data received:', gamesData);
       
       // Add safety check for gamesData
       if (!gamesData || !gamesData.games || gamesData.games.length === 0) {
@@ -84,14 +82,12 @@ export default function WeeklyPredictor() {
         };
       });
       
-      console.log('Processed games with predictions:', gamesWithPredictions);
       setGames(gamesWithPredictions);
       setWeekInfo({
         season: gamesData.season,
         week: gamesData.week,
         total_games: gamesData.total_games
       });
-      console.log('Games state updated, count:', gamesWithPredictions.length);
     } catch (error) {
       console.error('Error loading current week games:', error);
       // Set fallback data on error
@@ -331,11 +327,14 @@ export default function WeeklyPredictor() {
           <div className="flex items-center justify-center mb-4">
             <Trophy className="h-12 w-12 text-yellow-500 mr-3" />
             <h1 className="text-4xl font-bold text-gray-900">
-              Week 18, 2024 NFL Season
+              {weekInfo ? `Week ${weekInfo.week}, ${weekInfo.season} NFL Season` : 'NFL Season Predictions'}
             </h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Final regular season week with real NFL data and AI-powered analysis. Select a game to see detailed predictions and historical results.
+            {weekInfo ? 
+              `Week ${weekInfo.week} of the ${weekInfo.season} NFL season with real data and AI-powered analysis. Select a game to see detailed predictions and historical results.` :
+              'NFL season predictions with real data and AI-powered analysis. Select a game to see detailed predictions and historical results.'
+            }
           </p>
           {weekInfo && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg inline-block">
@@ -410,10 +409,7 @@ export default function WeeklyPredictor() {
           </h2>
           {/* Game Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {console.log('Rendering games, count:', games.length, 'games:', games)}
-            {games.map((game, index) => {
-              console.log(`Game ${index}:`, game);
-              return (
+            {games.map((game, index) => (
                 <div
                 key={game.game_id || index}
                 className={`bg-white rounded-lg shadow-md border-2 cursor-pointer transition-all hover:shadow-lg ${
@@ -482,8 +478,7 @@ export default function WeeklyPredictor() {
                   )}
                 </div>
               </div>
-              );
-            })}
+            ))}
           </div>
         </div>
       </div>
