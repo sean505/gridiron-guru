@@ -27,18 +27,144 @@ async def get_week18_2024_games():
     return {
         "games": [
             {
-                "game_id": "test1",
+                "game_id": "2024_18_001",
                 "away_team": "BUF",
-                "home_team": "KC",
+                "home_team": "MIA",
                 "game_date": "2024-01-07",
-                "game_time": "8:20 PM",
+                "game_time": "1:00 PM",
                 "week": 18,
                 "season": 2024
             },
             {
-                "game_id": "test2", 
-                "away_team": "SF",
-                "home_team": "DAL",
+                "game_id": "2024_18_002",
+                "away_team": "NYJ",
+                "home_team": "NE",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_003",
+                "away_team": "CIN",
+                "home_team": "CLE",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_004",
+                "away_team": "PIT",
+                "home_team": "BAL",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_005",
+                "away_team": "HOU",
+                "home_team": "IND",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_006",
+                "away_team": "JAX",
+                "home_team": "TEN",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_007",
+                "away_team": "DEN",
+                "home_team": "LV",
+                "game_date": "2024-01-07",
+                "game_time": "4:25 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_008",
+                "away_team": "LAC",
+                "home_team": "KC",
+                "game_date": "2024-01-07",
+                "game_time": "4:25 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_009",
+                "away_team": "DAL",
+                "home_team": "WAS",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_010",
+                "away_team": "NYG",
+                "home_team": "PHI",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_011",
+                "away_team": "CHI",
+                "home_team": "GB",
+                "game_date": "2024-01-07",
+                "game_time": "4:25 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_012",
+                "away_team": "DET",
+                "home_team": "MIN",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_013",
+                "away_team": "ATL",
+                "home_team": "NO",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_014",
+                "away_team": "CAR",
+                "home_team": "TB",
+                "game_date": "2024-01-07",
+                "game_time": "1:00 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_015",
+                "away_team": "ARI",
+                "home_team": "SEA",
+                "game_date": "2024-01-07",
+                "game_time": "4:25 PM",
+                "week": 18,
+                "season": 2024
+            },
+            {
+                "game_id": "2024_18_016",
+                "away_team": "LAR",
+                "home_team": "SF",
                 "game_date": "2024-01-07",
                 "game_time": "4:25 PM",
                 "week": 18,
@@ -47,8 +173,8 @@ async def get_week18_2024_games():
         ],
         "season": 2024,
         "week": 18,
-        "total_games": 2,
-        "note": "Test data for Week 18, 2024"
+        "total_games": 16,
+        "note": "Complete Week 18, 2024 regular season finale"
     }
 
 @app.get("/health")
