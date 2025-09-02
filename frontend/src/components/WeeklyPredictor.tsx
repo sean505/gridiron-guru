@@ -49,10 +49,11 @@ export default function WeeklyPredictor() {
       setLoading(true);
       const gamesData = await nflApi.getGames();
       
-      if (gamesData.games.length === 0) {
+      // Add safety check for gamesData
+      if (!gamesData || !gamesData.games || gamesData.games.length === 0) {
         // No games available
         setGames([]);
-        setWeekInfo({season: gamesData.season, week: gamesData.week, total_games: 0});
+        setWeekInfo({season: gamesData?.season || 2024, week: gamesData?.week || 1, total_games: 0});
         return;
       }
       
@@ -88,6 +89,9 @@ export default function WeeklyPredictor() {
       });
     } catch (error) {
       console.error('Error loading current week games:', error);
+      // Set fallback data on error
+      setGames([]);
+      setWeekInfo({season: 2024, week: 1, total_games: 0});
     } finally {
       setLoading(false);
     }
