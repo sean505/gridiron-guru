@@ -1,0 +1,37 @@
+# Ignore development files
+node_modules/
+.git/
+.gitignore
+README.md
+*.log
+*.md
+
+# Ignore API files we're not using
+api/main.py
+api/prediction_engine/
+api/data/
+api/train_models.py
+api/test_*.py
+api/simple_server.py
+api/training.log
+
+# Ignore frontend development files
+frontend/node_modules/
+frontend/src/
+frontend/tsconfig.*.json
+frontend/vite.config.ts
+frontend/tailwind.config.js
+frontend/postcss.config.js
+frontend/eslint.config.js
+frontend/index.html
+frontend/main.tsx
+frontend/App.tsx
+frontend/components/
+frontend/pages/
+frontend/shared/
+frontend/worker/
+
+# Keep only the built frontend and simple API
+!frontend/dist/
+!api/main_simple.py
+!api/requirements.txt

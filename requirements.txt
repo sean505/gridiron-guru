@@ -1,0 +1,13 @@
+# Core FastAPI dependencies
+fastapi>=0.100.0
+uvicorn>=0.20.0
+python-multipart>=0.0.5
+pydantic>=2.0.0
+
+# AI and environment
+openai>=1.0.0
+python-dotenv>=1.0.0
+httpx>=0.24.0
+
+# Basic data handling (lighter alternatives)
+requests>=2.28.0
