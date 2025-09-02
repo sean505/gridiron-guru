@@ -24,7 +24,7 @@ except ImportError:
     NFL_DATA_AVAILABLE = False
     logging.warning("nfl_data_py not available. Using fallback data only.")
 
-from .models import TeamStats, GameContext, GamePrediction
+from .data_models import TeamStats, GameContext, GamePrediction
 
 logger = logging.getLogger(__name__)
 

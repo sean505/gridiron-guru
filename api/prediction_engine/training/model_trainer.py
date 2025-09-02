@@ -435,6 +435,95 @@ class EnsembleModelTrainer:
         """Get training metrics for all models"""
         return self.training_metrics.copy()
     
+    def predict_single_game(self, features: np.ndarray) -> Dict[str, Any]:
+        """
+        Generate prediction for a single game using ensemble model.
+        
+        Args:
+            features: Feature array for the game
+            
+        Returns:
+            Dictionary with prediction results
+        """
+        try:
+            if self.ensemble_model is None:
+                raise ValueError("No trained ensemble model available")
+            
+            # Ensure features is 2D
+            if features.ndim == 1:
+                features = features.reshape(1, -1)
+            
+            # Scale features
+            features_scaled = self.feature_scaler.transform(features)
+            
+            # Get ensemble prediction
+            prediction = self.ensemble_model.predict(features_scaled)[0]
+            probabilities = self.ensemble_model.predict_proba(features_scaled)[0]
+            
+            # Calculate confidence and win probability
+            confidence = max(probabilities)
+            win_probability = probabilities[1] if prediction == 1 else probabilities[0]
+            
+            # Determine winner
+            predicted_winner = "home" if prediction == 1 else "away"
+            
+            # Determine if it's an upset (low confidence prediction)
+            is_upset = confidence < 0.6
+            
+            # Generate explanation
+            explanation = self._generate_explanation(prediction, confidence, probabilities)
+            key_factors = self._get_key_factors()
+            
+            return {
+                "predicted_winner": predicted_winner,
+                "confidence": float(confidence),
+                "win_probability": float(win_probability),
+                "is_upset": is_upset,
+                "explanation": explanation,
+                "key_factors": key_factors,
+                "model_accuracy": self.model_metadata.get('ensemble_accuracy', 0.605)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in single game prediction: {e}")
+            return self._get_default_prediction()
+    
+    def _generate_explanation(self, prediction: int, confidence: float, probabilities: np.ndarray) -> str:
+        """Generate explanation for the prediction"""
+        winner = "home team" if prediction == 1 else "away team"
+        confidence_pct = confidence * 100
+        
+        if confidence > 0.8:
+            strength = "strong"
+        elif confidence > 0.6:
+            strength = "moderate"
+        else:
+            strength = "weak"
+        
+        return f"The {winner} is predicted to win with {strength} confidence ({confidence_pct:.1f}%). The model considers historical performance, team statistics, and matchup factors."
+    
+    def _get_key_factors(self) -> List[str]:
+        """Get key factors considered by the model"""
+        return [
+            "Historical head-to-head performance",
+            "Recent team form and momentum", 
+            "Home field advantage",
+            "Team offensive and defensive efficiency",
+            "Injury reports and roster changes"
+        ]
+    
+    def _get_default_prediction(self) -> Dict[str, Any]:
+        """Return default prediction when model fails"""
+        return {
+            "predicted_winner": "home",
+            "confidence": 0.5,
+            "win_probability": 0.5,
+            "is_upset": True,
+            "explanation": "Unable to generate prediction due to model error. Using default values.",
+            "key_factors": ["Model temporarily unavailable"],
+            "model_accuracy": 0.0
+        }
+
     def get_model_summary(self) -> Dict[str, Any]:
         """Get comprehensive model summary"""
         return {

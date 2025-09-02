@@ -23,7 +23,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 
-from .models import TeamStats, GameContext, GamePrediction, WeeklyPredictions, PredictionRequest, PredictionResponse
+from .data_models import TeamStats, GameContext, GamePrediction, WeeklyPredictions, PredictionRequest, PredictionResponse
 from .data_collector import data_collector
 from .feature_engineering import feature_engineer
 
