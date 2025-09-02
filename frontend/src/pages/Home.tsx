@@ -16,13 +16,27 @@ export default function HomePage() {
         
         // Take first 3 games and create predictions
         const predictions = games.slice(0, 3).map((game, index) => {
-          // Generate deterministic predictions based on game data
+          // Use real ML predictions from the API if available
+          if (game.ai_prediction) {
+            return {
+              id: index + 1,
+              away_team: game.away_team,
+              home_team: game.home_team,
+              ai_pick: game.ai_prediction.predicted_winner,
+              confidence: game.ai_prediction.confidence,
+              upset_potential: game.ai_prediction.upset_potential,
+              is_upset: game.ai_prediction.is_upset,
+              game_date: game.game_date,
+              game_time: game.game_time
+            };
+          }
+          
+          // Fallback to deterministic predictions if API doesn't provide them
           const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
             a = ((a << 5) - a) + b.charCodeAt(0);
             return a & a;
           }, 0);
           
-          // Use hash to generate consistent predictions
           const confidence = 65 + (Math.abs(gameHash) % 20); // 65-85%
           const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20); // 15-35%
           const isUpset = confidence < 70 && upsetPotential > 25;

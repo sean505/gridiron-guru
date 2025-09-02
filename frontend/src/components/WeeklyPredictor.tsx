@@ -59,23 +59,32 @@ export default function WeeklyPredictor() {
       }
       
       const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game, index) => {
-        // Generate deterministic AI predictions based on game data
+        // Use real ML predictions from the API if available
+        if (game.ai_prediction) {
+          return {
+            ...game,
+            ai_prediction: {
+              predicted_winner: game.ai_prediction.predicted_winner,
+              confidence: game.ai_prediction.confidence,
+              predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
+              key_factors: generateKeyFactors(),
+              upset_potential: game.ai_prediction.upset_potential,
+              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team, game.ai_prediction.confidence)
+            },
+            is_upset_pick: game.ai_prediction.is_upset
+          };
+        }
+        
+        // Fallback to deterministic hash-based predictions if API doesn't provide them
         const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
           a = ((a << 5) - a) + b.charCodeAt(0);
           return a & a;
         }, 0);
         
-        // Use hash to generate consistent but varied predictions
-        const isHomeWin = (Math.abs(gameHash) % 100) > 45; // Slight home advantage
+        const isHomeWin = (Math.abs(gameHash) % 100) > 45;
         const predictedWinner = isHomeWin ? game.home_team : game.away_team;
-        
-        // Generate consistent confidence (65-85%) based on game hash
         const confidence = 65 + (Math.abs(gameHash) % 20);
-        
-        // Generate consistent upset potential (15-35%) based on game hash
         const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20);
-        
-        // Mark some games as upset picks (lower confidence, higher upset potential)
         const isUpsetPick = confidence < 70 && upsetPotential > 25;
         
         return {
@@ -122,23 +131,32 @@ export default function WeeklyPredictor() {
       }
       
       const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game, index) => {
-        // Generate deterministic AI predictions based on game data
+        // Use real ML predictions from the API if available
+        if (game.ai_prediction) {
+          return {
+            ...game,
+            ai_prediction: {
+              predicted_winner: game.ai_prediction.predicted_winner,
+              confidence: game.ai_prediction.confidence,
+              predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
+              key_factors: generateKeyFactors(),
+              upset_potential: game.ai_prediction.upset_potential,
+              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team, game.ai_prediction.confidence)
+            },
+            is_upset_pick: game.ai_prediction.is_upset
+          };
+        }
+        
+        // Fallback to deterministic hash-based predictions if API doesn't provide them
         const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
           a = ((a << 5) - a) + b.charCodeAt(0);
           return a & a;
         }, 0);
         
-        // Use hash to generate consistent but varied predictions
-        const isHomeWin = (Math.abs(gameHash) % 100) > 45; // Slight home advantage
+        const isHomeWin = (Math.abs(gameHash) % 100) > 45;
         const predictedWinner = isHomeWin ? game.home_team : game.away_team;
-        
-        // Generate consistent confidence (65-85%) based on game hash
         const confidence = 65 + (Math.abs(gameHash) % 20);
-        
-        // Generate consistent upset potential (15-35%) based on game hash
         const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20);
-        
-        // Mark some games as upset picks (lower confidence, higher upset potential)
         const isUpsetPick = confidence < 70 && upsetPotential > 25;
         
         return {
