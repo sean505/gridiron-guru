@@ -10,6 +10,31 @@ import json
 from datetime import datetime, timedelta
 import httpx
 
+def format_time_12hr(time_str: str) -> str:
+    """Convert 24-hour time string to 12-hour format with AM/PM"""
+    try:
+        # Handle various time formats
+        if ':' in time_str:
+            if 'AM' in time_str.upper() or 'PM' in time_str.upper():
+                return time_str  # Already in 12-hour format
+            else:
+                # Assume 24-hour format
+                time_part = time_str.split()[0] if ' ' in time_str else time_str
+                hour, minute = time_part.split(':')
+                hour = int(hour)
+                if hour == 0:
+                    return f"12:{minute} AM"
+                elif hour < 12:
+                    return f"{hour}:{minute} AM"
+                elif hour == 12:
+                    return f"12:{minute} PM"
+                else:
+                    return f"{hour-12}:{minute} PM"
+        else:
+            return time_str
+    except:
+        return time_str
+
 # Load environment variables
 load_dotenv()
 
@@ -166,20 +191,20 @@ async def fetch_espn_nfl_data(season: int = None, week: int = None):
                             try:
                                 dt = datetime.fromisoformat(game_date.replace('Z', '+00:00'))
                                 formatted_date = dt.strftime('%Y-%m-%d')
-                                formatted_time = dt.strftime('%H:%M')
+                                formatted_time = dt.strftime('%I:%M %p')  # 12-hour format with AM/PM
                             except:
                                 formatted_date = game_date[:10] if len(game_date) >= 10 else '2025-09-08'
-                                formatted_time = '13:00'
+                                formatted_time = '1:00 PM'
                         else:
                             formatted_date = '2025-09-08'
-                            formatted_time = '13:00'
+                            formatted_time = '1:00 PM'
                         
                         games.append({
                             "week": event_week,
                             "home_team": home_team,
                             "away_team": away_team,
                             "game_date": formatted_date,
-                            "game_time": formatted_time,
+                            "game_time": format_time_12hr(formatted_time),
                             "game_status": "scheduled"
                         })
             
@@ -209,8 +234,8 @@ async def get_real_games(season: int = None, week: int = None):
     # Fallback to mock data if ESPN API fails
     logger.info("Using fallback mock data")
     return [
-        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
+        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "1:00 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "4:25 PM", "game_status": "scheduled"},
     ]
 
 def get_team_stats_real(team: str, season: int = None):
