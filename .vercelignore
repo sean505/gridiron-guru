@@ -15,21 +15,8 @@ api/test_*.py
 api/simple_server.py
 api/training.log
 
-# Ignore frontend development files
+# Keep frontend source files for build, but ignore node_modules
 frontend/node_modules/
-frontend/src/
-frontend/tsconfig.*.json
-frontend/vite.config.ts
-frontend/tailwind.config.js
-frontend/postcss.config.js
-frontend/eslint.config.js
-frontend/index.html
-frontend/main.tsx
-frontend/App.tsx
-frontend/components/
-frontend/pages/
-frontend/shared/
-frontend/worker/
 
 # Keep only the built frontend and simple API
 !frontend/dist/
