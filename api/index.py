@@ -13,10 +13,138 @@ import joblib
 import numpy as np
 from pathlib import Path
 
-# Global variables for ML models
+# Global variables for ML models and data
 ensemble_model = None
 feature_scaler = None
 model_metadata = None
+game_log_data = None
+season_data = None
+
+def load_historical_data():
+    """Load historical game and season data"""
+    global game_log_data, season_data
+    
+    try:
+        # Load game log data
+        game_log_path = Path("api/data/game_log.json")
+        if game_log_path.exists():
+            with open(game_log_path, 'r') as f:
+                game_log_data = json.load(f)
+            logger.info(f"Loaded {len(game_log_data)} historical games")
+        
+        # Load season data
+        season_data_path = Path("api/data/season_data_by_team.json")
+        if season_data_path.exists():
+            with open(season_data_path, 'r') as f:
+                season_data = json.load(f)
+            logger.info(f"Loaded {len(season_data)} season records")
+        
+        return game_log_data is not None and season_data is not None
+        
+    except Exception as e:
+        logger.error(f"Error loading historical data: {e}")
+        return False
+
+def get_historical_matchups(home_team: str, away_team: str) -> List[Dict]:
+    """Get historical matchups between two teams"""
+    if not game_log_data:
+        return []
+    
+    # Convert team abbreviations to match data format
+    home_team_lower = home_team.lower()
+    away_team_lower = away_team.lower()
+    
+    matchups = []
+    for game in game_log_data:
+        # Check if this is a matchup between these teams
+        if ((game.get('homeTeamShort', '').lower() == home_team_lower and 
+             game.get('awayTeamShort', '').lower() == away_team_lower) or
+            (game.get('homeTeamShort', '').lower() == away_team_lower and 
+             game.get('awayTeamShort', '').lower() == home_team_lower)):
+            matchups.append(game)
+    
+    return matchups
+
+def get_team_record(team: str, season: int) -> Dict:
+    """Get team's record for a specific season"""
+    if not season_data:
+        return {"wins": 8, "losses": 8, "win_pct": 0.5, "points_for": 350, "points_against": 350}
+    
+    team_lower = team.lower()
+    wins = 0
+    losses = 0
+    points_for = 0
+    points_against = 0
+    games_played = 0
+    
+    for record in season_data:
+        if (record.get('Season') == season and 
+            record.get('Team', '').lower().find(team_lower) != -1):
+            games_played += 1
+            points_for += int(record.get('Tm', 0))
+            points_against += int(record.get('Opp', 0))
+            
+            if record.get('W/L') == 'W':
+                wins += 1
+            elif record.get('W/L') == 'L':
+                losses += 1
+    
+    win_pct = wins / max(games_played, 1)
+    
+    return {
+        "wins": wins,
+        "losses": losses,
+        "win_pct": win_pct,
+        "points_for": points_for,
+        "points_against": points_against,
+        "games_played": games_played
+    }
+
+def has_upset_history(home_team: str, away_team: str, matchups: List[Dict]) -> bool:
+    """Check if there's a history of upsets between these teams"""
+    if not matchups:
+        return False
+    
+    upset_count = 0
+    total_games = len(matchups)
+    
+    for game in matchups:
+        # Determine if this was an upset based on records and outcome
+        home_wins = game.get('homeWins', 0)
+        away_wins = game.get('awayWins', 0)
+        home_score = game.get('homeScore', 0)
+        away_score = game.get('awayScore', 0)
+        
+        # Upset: team with worse record won
+        if (home_wins < away_wins and home_score > away_score) or \
+           (away_wins < home_wins and away_score > home_score):
+            upset_count += 1
+    
+    # Consider it an upset pattern if >30% of games were upsets
+    return (upset_count / max(total_games, 1)) > 0.3
+
+def detect_upset(home_team: str, away_team: str, prediction_confidence: float) -> bool:
+    """Detect upsets using REAL historical data"""
+    
+    # Get historical matchups from game_log.json
+    historical_matchups = get_historical_matchups(home_team, away_team)
+    
+    # Get current season records from season_data_by_team.json
+    home_record = get_team_record(home_team, 2024)
+    away_record = get_team_record(away_team, 2024)
+    
+    # Real upset conditions:
+    # 1. Away team has better record but model predicts close game
+    # 2. Historical underdog pattern exists
+    # 3. Model confidence is low despite clear favorite
+    
+    is_upset = (
+        (away_record['win_pct'] < home_record['win_pct']) and 
+        (prediction_confidence < 0.65) and
+        has_upset_history(home_team, away_team, historical_matchups)
+    )
+    
+    return is_upset
 
 def load_ml_models():
     """Load the trained ML models"""
@@ -51,7 +179,7 @@ def load_ml_models():
         return False
 
 def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Dict[str, Any]:
-    """Generate prediction using trained ML models"""
+    """Generate prediction using trained ML models with real historical data"""
     global ensemble_model, feature_scaler, model_metadata
     
     try:
@@ -59,24 +187,44 @@ def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Di
             logger.warning("ML models not loaded, using fallback prediction")
             return generate_fallback_prediction(home_team, away_team)
         
-        # Create simple features based on team stats
-        home_stats = get_team_stats_real(home_team)
-        away_stats = get_team_stats_real(away_team)
+        # Get real team records from historical data
+        home_record = get_team_record(home_team, 2024)
+        away_record = get_team_record(away_team, 2024)
         
-        # Create feature vector (simplified version of what the model expects)
-        # This is a basic implementation - in production you'd want the full feature engineering
+        # Get historical matchups for context
+        historical_matchups = get_historical_matchups(home_team, away_team)
+        
+        # Calculate advanced features from historical data
+        home_win_pct = home_record["win_pct"]
+        away_win_pct = away_record["win_pct"]
+        home_ppg = home_record["points_for"] / max(home_record["games_played"], 1)
+        away_ppg = away_record["points_for"] / max(away_record["games_played"], 1)
+        home_papg = home_record["points_against"] / max(home_record["games_played"], 1)
+        away_papg = away_record["points_against"] / max(away_record["games_played"], 1)
+        
+        # Historical matchup analysis
+        historical_advantage = 0.0
+        if historical_matchups:
+            home_wins = sum(1 for game in historical_matchups 
+                          if game.get('homeTeamShort', '').lower() == home_team.lower() and 
+                          game.get('homeScore', 0) > game.get('awayScore', 0))
+            total_games = len(historical_matchups)
+            historical_advantage = (home_wins / total_games) - 0.5  # -0.5 to 0.5 range
+        
+        # Create comprehensive feature vector using real data
         features = np.array([
-            home_stats["wins"] / 16,  # Home win percentage
-            away_stats["wins"] / 16,  # Away win percentage
-            home_stats["points_for"] / 16,  # Home points per game
-            away_stats["points_for"] / 16,  # Away points per game
-            home_stats["points_against"] / 16,  # Home points allowed per game
-            away_stats["points_against"] / 16,  # Away points allowed per game
-            (32 - home_stats["offensive_rank"]) / 32,  # Home offensive rank (normalized)
-            (32 - away_stats["offensive_rank"]) / 32,  # Away offensive rank (normalized)
-            (32 - home_stats["defensive_rank"]) / 32,  # Home defensive rank (normalized)
-            (32 - away_stats["defensive_rank"]) / 32,  # Away defensive rank (normalized)
-            0.5,  # Home field advantage (placeholder)
+            home_win_pct,  # Home win percentage (real data)
+            away_win_pct,  # Away win percentage (real data)
+            home_ppg / 30.0,  # Home points per game (normalized)
+            away_ppg / 30.0,  # Away points per game (normalized)
+            home_papg / 30.0,  # Home points allowed per game (normalized)
+            away_papg / 30.0,  # Away points allowed per game (normalized)
+            (32 - home_record.get("offensive_rank", 16)) / 32,  # Home offensive rank
+            (32 - away_record.get("offensive_rank", 16)) / 32,  # Away offensive rank
+            (32 - home_record.get("defensive_rank", 16)) / 32,  # Home defensive rank
+            (32 - away_record.get("defensive_rank", 16)) / 32,  # Away defensive rank
+            0.5,  # Home field advantage
+            historical_advantage,  # Historical matchup advantage
             0.0,  # Weather factor (placeholder)
             0.0,  # Rest days (placeholder)
             0.0,  # Travel distance (placeholder)
@@ -85,7 +233,6 @@ def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Di
             0.0,  # Recent form (placeholder)
             0.0,  # Injury factor (placeholder)
             0.0,  # Coaching factor (placeholder)
-            0.0,  # Historical matchup (placeholder)
             0.0,  # Betting line (placeholder)
             0.0,  # Public betting (placeholder)
             0.0,  # Sharp money (placeholder)
@@ -114,8 +261,8 @@ def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Di
         # Calculate upset potential (inverse of confidence)
         upset_potential = (1.0 - confidence) * 100
         
-        # Determine if it's an upset (low confidence prediction)
-        is_upset = confidence < 0.6
+        # Use REAL upset detection based on historical patterns
+        is_upset = detect_upset(home_team, away_team, confidence)
         
         return {
             "predicted_winner": predicted_winner,
@@ -123,7 +270,10 @@ def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Di
             "win_probability": float(win_probability * 100),
             "upset_potential": float(upset_potential),
             "is_upset": is_upset,
-            "model_accuracy": model_metadata.get('training_metrics', {}).get('ensemble_accuracy', 0.605) if model_metadata else 0.605
+            "model_accuracy": model_metadata.get('training_metrics', {}).get('ensemble_accuracy', 0.605) if model_metadata else 0.605,
+            "historical_matchups": len(historical_matchups),
+            "home_record": f"{home_record['wins']}-{home_record['losses']}",
+            "away_record": f"{away_record['wins']}-{away_record['losses']}"
         }
         
     except Exception as e:
@@ -193,13 +343,22 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    """Load ML models on startup"""
+    """Load ML models and historical data on startup"""
     logger.info("Starting up Gridiron Guru API...")
+    
+    # Load ML models
     models_loaded = load_ml_models()
     if models_loaded:
         logger.info("✅ ML models loaded successfully")
     else:
         logger.warning("⚠️ ML models not loaded, using fallback predictions")
+    
+    # Load historical data
+    data_loaded = load_historical_data()
+    if data_loaded:
+        logger.info("✅ Historical data loaded successfully")
+    else:
+        logger.warning("⚠️ Historical data not loaded, using fallback data")
 
 # Add CORS middleware
 app.add_middleware(
@@ -516,6 +675,43 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "message": "API is running"}
+
+@app.get("/api/prediction/analysis/{home_team}/{away_team}")
+async def get_prediction_analysis(home_team: str, away_team: str):
+    """Get detailed prediction analysis with historical context"""
+    try:
+        # Get historical matchups
+        matchups = get_historical_matchups(home_team, away_team)
+        
+        # Get team records
+        home_record = get_team_record(home_team, 2024)
+        away_record = get_team_record(away_team, 2024)
+        
+        # Generate ML prediction
+        prediction = generate_ml_prediction(home_team, away_team, "2025-01-01")
+        
+        # Historical analysis
+        historical_analysis = {
+            "total_matchups": len(matchups),
+            "home_team_record": home_record,
+            "away_team_record": away_record,
+            "recent_matchups": matchups[-5:] if len(matchups) > 5 else matchups,
+            "upset_history": has_upset_history(home_team, away_team, matchups)
+        }
+        
+        return {
+            "prediction": prediction,
+            "historical_analysis": historical_analysis,
+            "data_sources": {
+                "game_log_entries": len(game_log_data) if game_log_data else 0,
+                "season_records": len(season_data) if season_data else 0,
+                "ml_models_loaded": ensemble_model is not None
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in prediction analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/teams", response_model=List[Team])
 async def get_teams():
