@@ -17,12 +17,27 @@ logger = logging.getLogger(__name__)
 
 # Import prediction engine
 try:
-    from prediction_engine import prediction_service, PredictionRequest, PredictionResponse
+    from prediction_engine import prediction_service
+    from prediction_engine.models import PredictionRequest, PredictionResponse
     PREDICTION_ENGINE_AVAILABLE = True
     logger.info("Prediction engine imported successfully")
 except ImportError as e:
     logger.warning(f"Prediction engine not available: {e}")
     PREDICTION_ENGINE_AVAILABLE = False
+    # Define fallback classes to prevent NameError
+    class PredictionRequest(BaseModel):
+        season: int
+        week: Optional[int] = None
+        include_upsets: bool = True
+        confidence_threshold: float = 0.6
+        teams: Optional[List[str]] = None
+        game_types: Optional[List[str]] = None
+    
+    class PredictionResponse(BaseModel):
+        success: bool
+        predictions: Optional[Dict[str, Any]] = None
+        error_message: Optional[str] = None
+        processing_time: float = 0.0
 
 app = FastAPI(title="Gridiron Guru API", version="1.0.0")
 
