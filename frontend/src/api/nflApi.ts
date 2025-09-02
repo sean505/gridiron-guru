@@ -94,11 +94,16 @@ export const nflApi = {
   },
 
   // Games
-  getGames: async (season?: number, week?: number): Promise<{games: Game[], season: number, week: number, total_games: number}> => {
+  getGames: async (season?: number, week?: number): Promise<{games: Game[], season: number, week: number, total_games: number, is_upcoming_week?: boolean}> => {
     const params: any = {};
     if (season) params.season = season;
     if (week) params.week = week;
     const response = await api.get('/api/games', { params });
+    return response.data;
+  },
+
+  getUpcomingGames: async (): Promise<{games: Game[], season: number, week: number, total_games: number, is_upcoming_week: boolean, message: string}> => {
+    const response = await api.get('/api/games/upcoming');
     return response.data;
   },
 

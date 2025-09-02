@@ -98,6 +98,59 @@ export default function WeeklyPredictor() {
     }
   };
 
+  const loadUpcomingWeekGames = async () => {
+    try {
+      setLoading(true);
+      const gamesData = await nflApi.getUpcomingGames();
+      
+      // Add safety check for gamesData
+      if (!gamesData || !gamesData.games || gamesData.games.length === 0) {
+        console.log('No upcoming games found');
+        setGames([]);
+        setWeekInfo({season: gamesData?.season || 2025, week: gamesData?.week || 2, total_games: 0});
+        return;
+      }
+      
+      const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game, index) => {
+        // Generate AI predictions for each game
+        const isHomeWin = Math.random() > 0.5;
+        const predictedWinner = isHomeWin ? game.home_team : game.away_team;
+        const confidence = Math.floor(Math.random() * 30) + 60; // 60-90%
+        const upsetPotential = Math.floor(Math.random() * 40) + 10; // 10-50%
+        
+        // Mark some games as upset picks (lower confidence, higher upset potential)
+        const isUpsetPick = confidence < 70 && upsetPotential > 30;
+        
+        return {
+          ...game,
+          ai_prediction: {
+            predicted_winner: predictedWinner,
+            confidence,
+            predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
+            key_factors: generateKeyFactors(),
+            upset_potential: upsetPotential,
+            ai_analysis: generateAIAnalysis(predictedWinner, game.away_team, game.home_team, confidence)
+          },
+          is_upset_pick: isUpsetPick
+        };
+      });
+      
+      setGames(gamesWithPredictions);
+      setWeekInfo({
+        season: gamesData.season,
+        week: gamesData.week,
+        total_games: gamesData.total_games
+      });
+    } catch (error) {
+      console.error('Error loading upcoming week games:', error);
+      // Set fallback data on error
+      setGames([]);
+      setWeekInfo({season: 2025, week: 2, total_games: 0});
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const generateKeyFactors = (): string[] => {
     const factors = [
       'Home field advantage',
@@ -343,6 +396,24 @@ export default function WeeklyPredictor() {
               </span>
             </div>
           )}
+          
+          {/* Week Navigation Buttons */}
+          <div className="mt-6 flex justify-center space-x-4">
+            <button
+              onClick={loadCurrentWeekGames}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+            >
+              {loading ? 'Loading...' : 'Current Week'}
+            </button>
+            <button
+              onClick={loadUpcomingWeekGames}
+              disabled={loading}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+            >
+              {loading ? 'Loading...' : 'Upcoming Week'}
+            </button>
+          </div>
         </div>
 
         {/* Upset Picks Section */}

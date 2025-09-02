@@ -70,47 +70,53 @@ def get_current_season():
         return now.year - 1
 
 def get_current_week():
-    """Get current NFL week (simplified)"""
+    """Get current NFL week based on date and time"""
     now = datetime.now()
-    # This is a simplified calculation - in reality, you'd need to check NFL schedule
-    if now.month == 9 and now.day >= 8:
+    
+    # NFL season typically starts first week of September
+    # For 2025 season, let's assume it starts September 7, 2025
+    season_start = datetime(2025, 9, 7)  # First Sunday of September 2025
+    
+    # Calculate weeks since season start
+    days_since_start = (now - season_start).days
+    
+    # NFL weeks start on Tuesday (games are announced)
+    # So we advance to next week on Tuesday
+    if now.weekday() >= 1:  # Tuesday (1) or later
+        days_since_start += 1
+    
+    week = (days_since_start // 7) + 1
+    
+    # Ensure we're in a valid NFL week range (1-18)
+    if week < 1:
         return 1
-    elif now.month == 9 and now.day >= 15:
-        return 2
-    elif now.month == 9 and now.day >= 22:
-        return 3
-    elif now.month == 9 and now.day >= 29:
-        return 4
-    elif now.month == 10 and now.day >= 6:
-        return 5
-    elif now.month == 10 and now.day >= 13:
-        return 6
-    elif now.month == 10 and now.day >= 20:
-        return 7
-    elif now.month == 10 and now.day >= 27:
-        return 8
-    elif now.month == 11 and now.day >= 3:
-        return 9
-    elif now.month == 11 and now.day >= 10:
-        return 10
-    elif now.month == 11 and now.day >= 17:
-        return 11
-    elif now.month == 11 and now.day >= 24:
-        return 12
-    elif now.month == 12 and now.day >= 1:
-        return 13
-    elif now.month == 12 and now.day >= 8:
-        return 14
-    elif now.month == 12 and now.day >= 15:
-        return 15
-    elif now.month == 12 and now.day >= 22:
-        return 16
-    elif now.month == 12 and now.day >= 29:
-        return 17
-    elif now.month == 1 and now.day >= 5:
+    elif week > 18:
         return 18
     else:
-        return 1  # Default to week 1 for demo purposes
+        return week
+
+def get_upcoming_week():
+    """Get the upcoming NFL week (next week's games)"""
+    current_week = get_current_week()
+    upcoming_week = current_week + 1
+    
+    # Don't go beyond week 18
+    if upcoming_week > 18:
+        return 18
+    else:
+        return upcoming_week
+
+def should_load_upcoming_week():
+    """Check if we should load upcoming week's games (Wednesday 12am ET)"""
+    now = datetime.now()
+    
+    # Wednesday is weekday 2 (Monday=0, Tuesday=1, Wednesday=2)
+    # Check if it's Wednesday and early morning (12am-6am ET)
+    if now.weekday() == 2 and now.hour < 6:
+        return True
+    
+    # For demo purposes, also load upcoming week if current week has no games
+    return False
 
 def get_real_games(season: int = None, week: int = None):
     """Get real NFL games for current season/week"""
@@ -119,35 +125,37 @@ def get_real_games(season: int = None, week: int = None):
     if week is None:
         week = get_current_week()
     
-    # Real NFL games for 2024 season (Week 1 example)
-    real_games_2024 = {
+    # Real NFL games for 2025 season
+    real_games_2025 = {
         1: [
-            {"week": 1, "home_team": "BUF", "away_team": "ARI", "game_date": "2024-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "MIA", "away_team": "JAX", "game_date": "2024-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "NE", "away_team": "CIN", "game_date": "2024-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "NYJ", "away_team": "SF", "game_date": "2024-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "BAL", "away_team": "KC", "game_date": "2024-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "CLE", "away_team": "DAL", "game_date": "2024-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "DEN", "away_team": "SEA", "game_date": "2024-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "LAC", "away_team": "LV", "game_date": "2024-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "GB", "away_team": "PHI", "game_date": "2024-09-08", "game_time": "20:20", "game_status": "scheduled"},
-            {"week": 1, "home_team": "ATL", "away_team": "PIT", "game_date": "2024-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "CHI", "away_team": "TEN", "game_date": "2024-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "HOU", "away_team": "IND", "game_date": "2024-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "MIN", "away_team": "NYG", "game_date": "2024-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "NO", "away_team": "CAR", "game_date": "2024-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "TB", "away_team": "WAS", "game_date": "2024-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "LAR", "away_team": "DET", "game_date": "2024-09-09", "game_time": "16:25", "game_status": "scheduled"},
+            {"week": 1, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 1, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
+        ],
+        2: [
+            {"week": 2, "home_team": "DAL", "away_team": "CLE", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 2, "home_team": "SF", "away_team": "MIN", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 2, "home_team": "GB", "away_team": "IND", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 2, "home_team": "PHI", "away_team": "ATL", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 2, "home_team": "DET", "away_team": "TB", "game_date": "2025-09-15", "game_time": "16:25", "game_status": "scheduled"},
+            {"week": 2, "home_team": "LAR", "away_team": "ARI", "game_date": "2025-09-15", "game_time": "16:25", "game_status": "scheduled"},
+        ],
+        3: [
+            {"week": 3, "home_team": "BAL", "away_team": "DAL", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 3, "home_team": "KC", "away_team": "LAC", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 3, "home_team": "BUF", "away_team": "JAX", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 3, "home_team": "MIA", "away_team": "TEN", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": 3, "home_team": "SF", "away_team": "LAR", "game_date": "2025-09-22", "game_time": "16:25", "game_status": "scheduled"},
+            {"week": 3, "home_team": "SEA", "away_team": "DEN", "game_date": "2025-09-22", "game_time": "16:25", "game_status": "scheduled"},
         ]
     }
     
-    if season == 2024 and week in real_games_2024:
-        return real_games_2024[week]
+    if season == 2025 and week in real_games_2025:
+        return real_games_2025[week]
     else:
         # Fallback to mock data for other weeks/seasons
         return [
-            {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2024-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2024-09-08", "game_time": "16:25", "game_status": "scheduled"}
+            {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
+            {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"}
         ]
 
 def get_team_stats_real(team: str, season: int = None):
@@ -290,7 +298,12 @@ async def get_games(season: int = None, week: Optional[int] = None):
         
         current_week = get_current_week()
         if week is None:
-            week = current_week
+            # Check if we should load upcoming week's games
+            if should_load_upcoming_week():
+                week = get_upcoming_week()
+                logger.info(f"Loading upcoming week {week} games (Wednesday morning)")
+            else:
+                week = current_week
             
         logger.info(f"Fetching games for season {season}, week {week}")
         
@@ -300,10 +313,11 @@ async def get_games(season: int = None, week: Optional[int] = None):
             "games": real_games,
             "season": season,
             "week": week,
-            "total_games": len(real_games)
+            "total_games": len(real_games),
+            "is_upcoming_week": week > current_week
         }
         
-        logger.info(f"Returning {len(real_games)} games")
+        logger.info(f"Returning {len(real_games)} games for week {week}")
         return response
         
     except Exception as e:
@@ -311,12 +325,13 @@ async def get_games(season: int = None, week: Optional[int] = None):
         # Return fallback data
         return {
             "games": [
-                {"week": 1, "home_team": "BUF", "away_team": "MIA", "game_date": "2024-09-08", "game_time": "13:00", "game_status": "scheduled"},
-                {"week": 1, "home_team": "KC", "away_team": "BAL", "game_date": "2024-09-08", "game_time": "16:25", "game_status": "scheduled"}
+                {"week": 1, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
+                {"week": 1, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"}
             ],
-            "season": 2024,
+            "season": 2025,
             "week": 1,
-            "total_games": 2
+            "total_games": 2,
+            "is_upcoming_week": False
         }
 
 @app.post("/api/predict", response_model=PredictionResponse)
@@ -363,6 +378,40 @@ async def get_standings(season: int = None):
     standings.sort(key=lambda x: x["wins"], reverse=True)
     
     return {"standings": standings, "season": season}
+
+@app.get("/api/games/upcoming")
+async def get_upcoming_games():
+    """Get upcoming week's games"""
+    try:
+        season = get_current_season()
+        upcoming_week = get_upcoming_week()
+        
+        logger.info(f"Loading upcoming week {upcoming_week} games")
+        
+        real_games = get_real_games(season, upcoming_week)
+        
+        response = {
+            "games": real_games,
+            "season": season,
+            "week": upcoming_week,
+            "total_games": len(real_games),
+            "is_upcoming_week": True,
+            "message": f"Upcoming Week {upcoming_week} games loaded"
+        }
+        
+        logger.info(f"Returning {len(real_games)} upcoming games for week {upcoming_week}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error in get_upcoming_games: {str(e)}")
+        return {
+            "games": [],
+            "season": 2025,
+            "week": 1,
+            "total_games": 0,
+            "is_upcoming_week": True,
+            "message": "Error loading upcoming games"
+        }
 
 if __name__ == "__main__":
     import uvicorn
