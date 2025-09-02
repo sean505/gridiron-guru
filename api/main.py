@@ -15,6 +15,15 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import prediction engine
+try:
+    from prediction_engine import prediction_service, PredictionRequest, PredictionResponse
+    PREDICTION_ENGINE_AVAILABLE = True
+    logger.info("Prediction engine imported successfully")
+except ImportError as e:
+    logger.warning(f"Prediction engine not available: {e}")
+    PREDICTION_ENGINE_AVAILABLE = False
+
 app = FastAPI(title="Gridiron Guru API", version="1.0.0")
 
 # Add CORS middleware
@@ -360,6 +369,179 @@ async def get_standings(season: Optional[int] = None):
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "message": "Gridiron Guru API is running"}
+
+# ============================================================================
+# PREDICTION ENGINE ENDPOINTS
+# ============================================================================
+
+@app.get("/api/prediction-engine/status")
+async def prediction_engine_status():
+    """Get prediction engine status and available data"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            return {
+                "available": False,
+                "message": "Prediction engine not available",
+                "error": "Import failed"
+            }
+        
+        # Initialize prediction service
+        prediction_service.initialize()
+        
+        # Get available data info
+        available_data = prediction_service.get_available_data()
+        
+        return {
+            "available": True,
+            "message": "Prediction engine is ready",
+            "data_info": available_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking prediction engine status: {e}")
+        return {
+            "available": False,
+            "message": "Prediction engine error",
+            "error": str(e)
+        }
+
+@app.post("/api/prediction-engine/train")
+async def train_prediction_models(
+    train_years: Optional[List[int]] = None,
+    val_year: int = 2024
+):
+    """Train the prediction models"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Prediction engine not available")
+        
+        logger.info(f"Training models with years: {train_years}, validation: {val_year}")
+        
+        # Train models
+        training_results = prediction_service.train_models(train_years, val_year)
+        
+        return {
+            "success": True,
+            "message": "Models trained successfully",
+            "training_results": training_results
+        }
+        
+    except Exception as e:
+        logger.error(f"Error training models: {e}")
+        raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
+
+@app.get("/api/prediction-engine/predict/week/{season}/{week}")
+async def predict_weekly_games(season: int, week: int):
+    """Get AI predictions for all games in a specific week"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Prediction engine not available")
+        
+        logger.info(f"Predicting {season} Week {week} games")
+        
+        # Get predictions
+        predictions = prediction_service.predict_week(season, week)
+        
+        return {
+            "success": True,
+            "predictions": predictions.dict(),
+            "message": f"Generated {len(predictions.games)} predictions for {season} Week {week}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error predicting weekly games: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+@app.post("/api/prediction-engine/predict/game")
+async def predict_single_game(
+    home_team: str,
+    away_team: str,
+    season: int,
+    week: int
+):
+    """Get AI prediction for a specific game"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Prediction engine not available")
+        
+        logger.info(f"Predicting {away_team} @ {home_team} - {season} Week {week}")
+        
+        # Get prediction
+        prediction = prediction_service.predict_game(home_team, away_team, season, week)
+        
+        return {
+            "success": True,
+            "prediction": prediction.dict(),
+            "message": f"Prediction generated for {away_team} @ {home_team}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error predicting single game: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+@app.post("/api/prediction-engine/predict")
+async def predict_games(request: PredictionRequest):
+    """Advanced prediction endpoint with full request/response handling"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Prediction engine not available")
+        
+        logger.info(f"Processing prediction request: {request.dict()}")
+        
+        # Process prediction request
+        response = prediction_service.predict_request(request)
+        
+        return response.dict()
+        
+    except Exception as e:
+        logger.error(f"Error processing prediction request: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction request failed: {str(e)}")
+
+@app.get("/api/prediction-engine/team-stats/{team}")
+async def get_team_stats_advanced(
+    team: str,
+    season: int,
+    week: int
+):
+    """Get comprehensive team statistics from prediction engine"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Prediction engine not available")
+        
+        logger.info(f"Getting advanced stats for {team} - {season} Week {week}")
+        
+        # Get team stats
+        team_stats = prediction_service.get_team_stats(team, season, week)
+        
+        return {
+            "success": True,
+            "team_stats": team_stats.dict(),
+            "message": f"Retrieved stats for {team}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting team stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get team stats: {str(e)}")
+
+@app.get("/api/prediction-engine/model-performance")
+async def get_model_performance():
+    """Get current model performance metrics"""
+    try:
+        if not PREDICTION_ENGINE_AVAILABLE:
+            raise HTTPException(status_code=503, detail="Prediction engine not available")
+        
+        # Get performance metrics
+        performance = prediction_service.get_model_performance()
+        
+        return {
+            "success": True,
+            "performance": performance,
+            "message": "Model performance retrieved"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting model performance: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get performance: {str(e)}")
 
 @app.get("/api/test-data")
 async def test_nfl_data():
