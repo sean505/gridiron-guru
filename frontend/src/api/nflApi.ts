@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API base URL - will be different for local dev vs production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'https://gridiron-guru.vercel.app';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -98,9 +98,18 @@ export const nflApi = {
     const params: any = {};
     if (season) params.season = season;
     if (week) params.week = week;
-    
     const response = await api.get('/api/games', { params });
     return response.data.games;
+  },
+
+  getWeek1_2025: async (): Promise<{games: Game[], message?: string, season: number, week: number, total_games: number}> => {
+    const response = await api.get('/api/games/week1-2025');
+    return response.data;
+  },
+
+  getWeek18_2024: async (): Promise<{games: Game[], message?: string, season: number, week: number, total_games: number}> => {
+    const response = await api.get('/api/games/week18-2024');
+    return response.data;
   },
 
   // Players

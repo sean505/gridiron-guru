@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, AlertTriangle, Target, BarChart3, Calendar, Clock, Users } from 'lucide-react';
-import { mockNflApi } from '../api/mockApi';
+import { nflApi } from '../api/nflApi';
 
 interface Game {
   game_id: string;
@@ -8,6 +8,13 @@ interface Game {
   home_team: string;
   game_date: string;
   game_time: string;
+  away_score?: number;
+  home_score?: number;
+  result?: number;
+  total?: number;
+  overtime?: number;
+  week?: number;
+  season?: number;
 }
 
 interface AIPrediction {
@@ -31,16 +38,26 @@ export default function WeeklyPredictor() {
   const [confidence, setConfidence] = useState(5);
   const [loading, setLoading] = useState(false);
   const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
+  const [weekInfo, setWeekInfo] = useState<{season: number, week: number, total_games: number} | null>(null);
 
   useEffect(() => {
-    loadGamesWithPredictions();
+    loadWeek18_2024Games();
   }, []);
 
-  const loadGamesWithPredictions = async () => {
+  const loadWeek18_2024Games = async () => {
     try {
-      const gamesData = await mockNflApi.getGames();
-      const gamesWithPredictions: GameWithPrediction[] = gamesData.map((game, index) => {
-        // Generate mock AI predictions for each game
+      setLoading(true);
+      const week18Data = await nflApi.getWeek18_2024();
+      
+      if (week18Data.games.length === 0) {
+        // No games available
+        setGames([]);
+        setWeekInfo({season: 2024, week: 18, total_games: 0});
+        return;
+      }
+      
+      const gamesWithPredictions: GameWithPrediction[] = week18Data.games.map((game, index) => {
+        // Generate AI predictions for each game
         const isHomeWin = Math.random() > 0.5;
         const predictedWinner = isHomeWin ? game.home_team : game.away_team;
         const confidence = Math.floor(Math.random() * 30) + 60; // 60-90%
@@ -64,8 +81,15 @@ export default function WeeklyPredictor() {
       });
       
       setGames(gamesWithPredictions);
+      setWeekInfo({
+        season: week18Data.season,
+        week: week18Data.week,
+        total_games: week18Data.total_games
+      });
     } catch (error) {
-      console.error('Error loading games:', error);
+      console.error('Error loading Week 18, 2024 games:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -291,66 +315,80 @@ export default function WeeklyPredictor() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            <Trophy className="inline-block w-10 h-10 text-yellow-500 mr-3" />
-            Gridiron Guru Weekly Predictor
-          </h1>
-          <p className="text-xl text-gray-600">
-            AI-powered NFL predictions backed by comprehensive data analysis
-          </p>
-          <div className="mt-4 p-3 bg-blue-100 rounded-lg inline-block">
-            <p className="text-sm text-blue-800">
-              🚧 Currently using mock data for development. Backend integration coming soon!
-            </p>
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center mb-4">
+            <Trophy className="h-12 w-12 text-yellow-500 mr-3" />
+            <h1 className="text-4xl font-bold text-gray-900">
+              Week 18, 2024 NFL Season
+            </h1>
           </div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Final regular season week with real NFL data and AI-powered analysis. Select a game to see detailed predictions and historical results.
+          </p>
+          {weekInfo && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg inline-block">
+              <span className="text-blue-800 font-medium">
+                {weekInfo.season} Season • Week {weekInfo.week} • {weekInfo.total_games} Games
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Upset Picks Section */}
         {games.filter(g => g.is_upset_pick).length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <AlertTriangle className="w-6 h-6 mr-2 text-red-500" />
-              AI Upset Picks
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {games.filter(g => g.is_upset_pick).map((game) => (
-                <div
-                  key={game.game_id}
-                  onClick={() => handleGameSelect(game)}
-                  className="bg-red-50 border-2 border-red-200 rounded-lg shadow-lg p-6 cursor-pointer transition-all hover:shadow-xl hover:bg-red-100"
-                >
-                  <div className="text-center mb-4">
-                    <div className="flex items-center justify-center mb-2">
-                      <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-                      <span className="text-sm font-medium text-red-700 bg-red-200 px-2 py-1 rounded-full">
-                        UPSET PICK
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
-                    </h3>
+            {/* AI Upset Picks */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
+                AI Upset Picks
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {games.filter(game => game.is_upset_pick).map((game, index) => (
+                  <div
+                    key={game.game_id || index}
+                    className="bg-red-50 border-2 border-red-300 rounded-lg p-4 cursor-pointer transition-all hover:shadow-lg"
+                    onClick={() => handleGameSelect(game)}
+                  >
                     <div className="text-center">
-                      <span className="text-sm text-gray-600">AI Pick: </span>
-                      <span className="font-bold text-red-700">{getTeamName(game.ai_prediction.predicted_winner)}</span>
-                    </div>
-                    <div className="mt-2 flex justify-center space-x-4 text-sm">
-                      <span className={`px-2 py-1 rounded-full ${getConfidenceColor(game.ai_prediction.confidence)}`}>
-                        {game.ai_prediction.confidence}% confidence
-                      </span>
-                      <span className={`px-2 py-1 rounded-full ${getUpsetPotentialColor(game.ai_prediction.upset_potential)}`}>
-                        {game.ai_prediction.upset_potential}% upset potential
-                      </span>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
+                      </h3>
+                      
+                      {/* Final Score (if available) */}
+                      {game.away_score !== undefined && game.home_score !== undefined && (
+                        <div className="mb-3 p-2 bg-white rounded border">
+                          <div className="text-lg font-bold text-gray-900">
+                            {game.away_score} - {game.home_score}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            {game.away_score > game.home_score ? 
+                              `${getTeamName(game.away_team)} Wins` : 
+                              `${getTeamName(game.home_team)} Wins`
+                            }
+                            {game.overtime ? ' (OT)' : ''}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="text-red-600 font-bold mb-2">
+                        AI Pick: {getTeamName(game.ai_prediction.predicted_winner)}
+                      </div>
+                      <div className="flex justify-center space-x-3">
+                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                          {game.ai_prediction.confidence}%
+                        </span>
+                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                          {game.ai_prediction.upset_potential}%
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-center text-sm text-gray-500 bg-white rounded-md py-2">
-                    {game.game_date} • {game.game_time}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -361,37 +399,75 @@ export default function WeeklyPredictor() {
             <BarChart3 className="w-6 h-6 mr-2 text-blue-500" />
             All Games This Week
           </h2>
+          {/* Game Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {games.map((game) => (
+            {games.map((game, index) => (
               <div
-                key={game.game_id}
-                onClick={() => handleGameSelect(game)}
-                className={`bg-white rounded-lg shadow-lg p-6 cursor-pointer transition-all hover:shadow-xl border border-gray-100 ${
-                  game.is_upset_pick ? 'ring-2 ring-red-300' : ''
+                key={game.game_id || index}
+                className={`bg-white rounded-lg shadow-md border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  game.is_upset_pick ? 'border-red-300 bg-red-50' : 'border-gray-100'
                 }`}
+                onClick={() => handleGameSelect(game)}
               >
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
-                  </h3>
-                  
+                <div className="p-4">
+                  {/* Game Header */}
                   <div className="text-center mb-3">
-                    <span className="text-sm text-gray-600">AI Pick: </span>
-                    <span className="font-bold text-blue-700">{getTeamName(game.ai_prediction.predicted_winner)}</span>
+                    <h3 className="font-semibold text-gray-900 text-sm">
+                      {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
+                    </h3>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {game.game_date} • {game.game_time}
+                    </div>
                   </div>
-                  
-                  <div className="flex justify-center space-x-3 text-sm">
-                    <span className={`px-2 py-1 rounded-full ${getConfidenceColor(game.ai_prediction.confidence)}`}>
-                      {game.ai_prediction.confidence}%
-                    </span>
-                    <span className={`px-2 py-1 rounded-full ${getUpsetPotentialColor(game.ai_prediction.upset_potential)}`}>
-                      {game.ai_prediction.upset_potential}%
-                    </span>
+
+                  {/* Final Score (if available) */}
+                  {game.away_score !== undefined && game.home_score !== undefined && (
+                    <div className="text-center mb-3 p-2 bg-gray-50 rounded">
+                      <div className="text-lg font-bold text-gray-900">
+                        {game.away_score} - {game.home_score}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {game.away_score > game.home_score ? 
+                          `${getTeamName(game.away_team)} Wins` : 
+                          `${getTeamName(game.home_team)} Wins`
+                        }
+                        {game.overtime ? ' (OT)' : ''}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Prediction */}
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600 mb-1">AI Pick:</div>
+                    <div className="font-semibold text-blue-600 text-sm">
+                      {getTeamName(game.ai_prediction.predicted_winner)}
+                    </div>
                   </div>
-                </div>
-                
-                <div className="text-center text-sm text-gray-500 bg-gray-50 rounded-md py-2">
-                  {game.game_date} • {game.game_time}
+
+                  {/* Prediction Stats */}
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Confidence</div>
+                      <div className={`text-xs px-2 py-1 rounded-full ${getConfidenceColor(game.ai_prediction.confidence)}`}>
+                        {game.ai_prediction.confidence}%
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">Upset Potential</div>
+                      <div className={`text-xs px-2 py-1 rounded-full ${getUpsetPotentialColor(game.ai_prediction.upset_potential)}`}>
+                        {game.ai_prediction.upset_potential}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upset Pick Badge */}
+                  {game.is_upset_pick && (
+                    <div className="mt-3 text-center">
+                      <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full border border-red-300">
+                        UPSET PICK
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
