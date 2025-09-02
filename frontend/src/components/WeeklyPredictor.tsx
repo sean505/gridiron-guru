@@ -41,22 +41,22 @@ export default function WeeklyPredictor() {
   const [weekInfo, setWeekInfo] = useState<{season: number, week: number, total_games: number} | null>(null);
 
   useEffect(() => {
-    loadWeek18_2024Games();
+    loadCurrentWeekGames();
   }, []);
 
-  const loadWeek18_2024Games = async () => {
+  const loadCurrentWeekGames = async () => {
     try {
       setLoading(true);
-      const week18Data = await nflApi.getWeek18_2024();
+      const gamesData = await nflApi.getGames();
       
-      if (week18Data.games.length === 0) {
+      if (gamesData.games.length === 0) {
         // No games available
         setGames([]);
-        setWeekInfo({season: 2024, week: 18, total_games: 0});
+        setWeekInfo({season: gamesData.season, week: gamesData.week, total_games: 0});
         return;
       }
       
-      const gamesWithPredictions: GameWithPrediction[] = week18Data.games.map((game, index) => {
+      const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game, index) => {
         // Generate AI predictions for each game
         const isHomeWin = Math.random() > 0.5;
         const predictedWinner = isHomeWin ? game.home_team : game.away_team;
@@ -82,12 +82,12 @@ export default function WeeklyPredictor() {
       
       setGames(gamesWithPredictions);
       setWeekInfo({
-        season: week18Data.season,
-        week: week18Data.week,
-        total_games: week18Data.total_games
+        season: gamesData.season,
+        week: gamesData.week,
+        total_games: gamesData.total_games
       });
     } catch (error) {
-      console.error('Error loading Week 18, 2024 games:', error);
+      console.error('Error loading current week games:', error);
     } finally {
       setLoading(false);
     }
