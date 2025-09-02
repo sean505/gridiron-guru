@@ -47,10 +47,13 @@ export default function WeeklyPredictor() {
   const loadCurrentWeekGames = async () => {
     try {
       setLoading(true);
+      console.log('Loading games...');
       const gamesData = await nflApi.getGames();
+      console.log('Games data received:', gamesData);
       
       // Add safety check for gamesData
       if (!gamesData || !gamesData.games || gamesData.games.length === 0) {
+        console.log('No games found or invalid data structure');
         // No games available
         setGames([]);
         setWeekInfo({season: gamesData?.season || 2024, week: gamesData?.week || 1, total_games: 0});
@@ -81,12 +84,14 @@ export default function WeeklyPredictor() {
         };
       });
       
+      console.log('Processed games with predictions:', gamesWithPredictions);
       setGames(gamesWithPredictions);
       setWeekInfo({
         season: gamesData.season,
         week: gamesData.week,
         total_games: gamesData.total_games
       });
+      console.log('Games state updated, count:', gamesWithPredictions.length);
     } catch (error) {
       console.error('Error loading current week games:', error);
       // Set fallback data on error
@@ -405,6 +410,7 @@ export default function WeeklyPredictor() {
           </h2>
           {/* Game Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {console.log('Rendering games, count:', games.length, 'games:', games)}
             {games.map((game, index) => (
               <div
                 key={game.game_id || index}
