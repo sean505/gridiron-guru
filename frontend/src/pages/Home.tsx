@@ -16,16 +16,22 @@ export default function HomePage() {
         
         // Take first 3 games and create predictions
         const predictions = games.slice(0, 3).map((game, index) => {
-          // Simple prediction logic for display
-          const confidence = Math.floor(Math.random() * 30) + 65; // 65-95%
-          const upsetPotential = 100 - confidence;
-          const isUpset = upsetPotential > 30;
+          // Generate deterministic predictions based on game data
+          const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+          }, 0);
+          
+          // Use hash to generate consistent predictions
+          const confidence = 65 + (Math.abs(gameHash) % 20); // 65-85%
+          const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20); // 15-35%
+          const isUpset = confidence < 70 && upsetPotential > 25;
           
           return {
             id: index + 1,
             away_team: game.away_team,
             home_team: game.home_team,
-            ai_pick: Math.random() > 0.5 ? game.home_team : game.away_team,
+            ai_pick: (Math.abs(gameHash) % 100) > 45 ? game.home_team : game.away_team,
             confidence,
             upset_potential: upsetPotential,
             is_upset: isUpset,
