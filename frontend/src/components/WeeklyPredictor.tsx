@@ -411,8 +411,10 @@ export default function WeeklyPredictor() {
           {/* Game Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {console.log('Rendering games, count:', games.length, 'games:', games)}
-            {games.map((game, index) => (
-              <div
+            {games.map((game, index) => {
+              console.log(`Game ${index}:`, game);
+              return (
+                <div
                 key={game.game_id || index}
                 className={`bg-white rounded-lg shadow-md border-2 cursor-pointer transition-all hover:shadow-lg ${
                   game.is_upset_pick ? 'border-red-300 bg-red-50' : 'border-gray-100'
@@ -480,7 +482,8 @@ export default function WeeklyPredictor() {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
