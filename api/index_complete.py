@@ -14,7 +14,7 @@ import numpy as np
 from pathlib import Path
 
 # Import optimized data loader
-from data_loader import data_loader
+from .data_loader import data_loader
 
 # Load environment variables
 load_dotenv()
