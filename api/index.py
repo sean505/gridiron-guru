@@ -8,6 +8,7 @@ import logging
 import requests
 import json
 from datetime import datetime, timedelta
+import httpx
 
 # Load environment variables
 load_dotenv()
@@ -118,79 +119,99 @@ def should_load_upcoming_week():
     # For demo purposes, also load upcoming week if current week has no games
     return False
 
-def get_real_games(season: int = None, week: int = None):
-    """Get real NFL games for current season/week"""
+async def fetch_espn_nfl_data(season: int = None, week: int = None):
+    """Fetch real NFL data from ESPN API"""
+    try:
+        if season is None:
+            season = get_current_season()
+        
+        # ESPN API endpoint for NFL scoreboard
+        url = f"http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+            
+            events = data.get('events', [])
+            games = []
+            
+            for event in events:
+                event_season = event.get('season', {}).get('year', season)
+                event_week = event.get('week', {}).get('number', 1)
+                
+                # Filter by season and week if specified
+                if season and event_season != season:
+                    continue
+                if week and event_week != week:
+                    continue
+                
+                competition = event.get('competitions', [{}])[0]
+                competitors = competition.get('competitors', [])
+                
+                if len(competitors) >= 2:
+                    home_team = None
+                    away_team = None
+                    
+                    for competitor in competitors:
+                        if competitor.get('homeAway') == 'home':
+                            home_team = competitor.get('team', {}).get('abbreviation', '')
+                        elif competitor.get('homeAway') == 'away':
+                            away_team = competitor.get('team', {}).get('abbreviation', '')
+                    
+                    if home_team and away_team:
+                        game_date = event.get('date', '')
+                        # Parse date and format it
+                        if game_date:
+                            try:
+                                dt = datetime.fromisoformat(game_date.replace('Z', '+00:00'))
+                                formatted_date = dt.strftime('%Y-%m-%d')
+                                formatted_time = dt.strftime('%H:%M')
+                            except:
+                                formatted_date = game_date[:10] if len(game_date) >= 10 else '2025-09-08'
+                                formatted_time = '13:00'
+                        else:
+                            formatted_date = '2025-09-08'
+                            formatted_time = '13:00'
+                        
+                        games.append({
+                            "week": event_week,
+                            "home_team": home_team,
+                            "away_team": away_team,
+                            "game_date": formatted_date,
+                            "game_time": formatted_time,
+                            "game_status": "scheduled"
+                        })
+            
+            logger.info(f"Fetched {len(games)} games from ESPN API for season {season}, week {week}")
+            return games
+            
+    except Exception as e:
+        logger.error(f"Error fetching ESPN data: {e}")
+        return []
+
+async def get_real_games(season: int = None, week: int = None):
+    """Get real NFL games for current season/week from ESPN API"""
     if season is None:
         season = get_current_season()
     if week is None:
         week = get_current_week()
     
-    # Real NFL games for 2025 season
-    real_games_2025 = {
-        1: [
-            {"week": 1, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "DAL", "away_team": "CLE", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "SF", "away_team": "MIN", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "GB", "away_team": "IND", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "PHI", "away_team": "ATL", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "DET", "away_team": "TB", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "LAR", "away_team": "ARI", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "SEA", "away_team": "DEN", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "LAC", "away_team": "LV", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 1, "home_team": "NE", "away_team": "CIN", "game_date": "2025-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "NYJ", "away_team": "SF", "game_date": "2025-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "HOU", "away_team": "IND", "game_date": "2025-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "NO", "away_team": "CAR", "game_date": "2025-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "WAS", "away_team": "NYG", "game_date": "2025-09-09", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 1, "home_team": "PIT", "away_team": "TEN", "game_date": "2025-09-09", "game_time": "16:25", "game_status": "scheduled"},
-        ],
-        2: [
-            {"week": 2, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "DAL", "away_team": "CLE", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "SF", "away_team": "MIN", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "GB", "away_team": "IND", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "PHI", "away_team": "ATL", "game_date": "2025-09-15", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "DET", "away_team": "TB", "game_date": "2025-09-15", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 2, "home_team": "LAR", "away_team": "ARI", "game_date": "2025-09-15", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 2, "home_team": "SEA", "away_team": "DEN", "game_date": "2025-09-15", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 2, "home_team": "LAC", "away_team": "LV", "game_date": "2025-09-15", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 2, "home_team": "NE", "away_team": "CIN", "game_date": "2025-09-16", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "NYJ", "away_team": "SF", "game_date": "2025-09-16", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "HOU", "away_team": "IND", "game_date": "2025-09-16", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "NO", "away_team": "CAR", "game_date": "2025-09-16", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "WAS", "away_team": "NYG", "game_date": "2025-09-16", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 2, "home_team": "PIT", "away_team": "TEN", "game_date": "2025-09-16", "game_time": "16:25", "game_status": "scheduled"},
-        ],
-        3: [
-            {"week": 3, "home_team": "BAL", "away_team": "DAL", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "KC", "away_team": "LAC", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "BUF", "away_team": "JAX", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "MIA", "away_team": "TEN", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "SF", "away_team": "LAR", "game_date": "2025-09-22", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 3, "home_team": "SEA", "away_team": "DEN", "game_date": "2025-09-22", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 3, "home_team": "GB", "away_team": "MIN", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "PHI", "away_team": "NO", "game_date": "2025-09-22", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "DET", "away_team": "ATL", "game_date": "2025-09-22", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 3, "home_team": "ARI", "away_team": "LV", "game_date": "2025-09-22", "game_time": "16:25", "game_status": "scheduled"},
-            {"week": 3, "home_team": "NE", "away_team": "NYJ", "game_date": "2025-09-23", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "CIN", "away_team": "CLE", "game_date": "2025-09-23", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "HOU", "away_team": "IND", "game_date": "2025-09-23", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "CAR", "away_team": "TB", "game_date": "2025-09-23", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "WAS", "away_team": "NYG", "game_date": "2025-09-23", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": 3, "home_team": "PIT", "away_team": "TEN", "game_date": "2025-09-23", "game_time": "16:25", "game_status": "scheduled"},
-        ]
-    }
+    # Try to fetch from ESPN API first
+    try:
+        espn_games = await fetch_espn_nfl_data(season, week)
+        if espn_games:
+            logger.info(f"Successfully fetched {len(espn_games)} games from ESPN API")
+            return espn_games
+    except Exception as e:
+        logger.warning(f"ESPN API failed, falling back to mock data: {e}")
     
-    if season == 2025 and week in real_games_2025:
-        return real_games_2025[week]
-    else:
-        # Fallback to mock data for other weeks/seasons
-        return [
-            {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
-            {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"}
-        ]
+    # Fallback to mock data if ESPN API fails
+    logger.info("Using fallback mock data")
+    return [
+        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "13:00", "game_status": "scheduled"},
+        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "16:25", "game_status": "scheduled"},
+    ]
 
 def get_team_stats_real(team: str, season: int = None):
     """Get real team statistics"""
@@ -341,7 +362,7 @@ async def get_games(season: int = None, week: Optional[int] = None):
             
         logger.info(f"Fetching games for season {season}, week {week}")
         
-        real_games = get_real_games(season, week)
+        real_games = await get_real_games(season, week)
         
         response = {
             "games": real_games,
@@ -422,7 +443,7 @@ async def get_upcoming_games():
         
         logger.info(f"Loading upcoming week {upcoming_week} games")
         
-        real_games = get_real_games(season, upcoming_week)
+        real_games = await get_real_games(season, upcoming_week)
         
         response = {
             "games": real_games,
