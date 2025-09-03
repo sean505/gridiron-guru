@@ -69,9 +69,9 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
   const bannerTextColor = game.ai_prediction.is_upset ? "text-red-600" : "text-blue-600";
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto lg:max-w-none">
       {/* Banner Section */}
-      <div className={`${bannerBgColor} border border-b-0 rounded-t-xl p-4 shadow-sm`}>
+      <div className={`${bannerBgColor} border border-b-0 rounded-t-xl p-3 lg:p-4 shadow-sm`}>
         <div className="flex items-center gap-4">
           <Lightbulb className="w-6 h-6 text-blue-500" />
           <div className="flex-1 border-l border-blue-300 pl-4">
@@ -83,11 +83,11 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
       </div>
 
       {/* Main Card */}
-      <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-6">
+      <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-4 lg:p-6">
         {/* Stats Section */}
-        <div className="flex flex-wrap justify-center gap-6 mb-8">
+        <div className="flex flex-wrap justify-center gap-4 lg:gap-6 mb-6 lg:mb-8">
           {/* Away Team */}
-          <div className="flex flex-col items-center gap-1 w-48">
+          <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.away_team)}</p>
             <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamName(game.away_team)}</h4>
             <p className="text-gray-600 text-base text-center">0-0</p>
@@ -95,7 +95,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
           </div>
 
           {/* Game Info */}
-          <div className="flex flex-col items-center gap-1 w-48">
+          <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
             <h4 className="text-xl font-bold text-gray-600 text-center tracking-tight">
               {formatDate(game.game_date)}
             </h4>
@@ -108,7 +108,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
           </div>
 
           {/* Home Team */}
-          <div className="flex flex-col items-center gap-1 w-48">
+          <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
             {userPick && (
               <div className="bg-green-100 border border-green-300 rounded-xl px-2 py-1 flex items-center gap-2 mb-2">
                 <span className="text-green-700 text-sm font-normal">YOUR PICK</span>

@@ -480,7 +480,7 @@ export default function WeeklyPredictor() {
             All Games This Week
           </h2>
           {/* Game Cards */}
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {games.map((game, index) => (
               <div
                 key={game.game_id || index}
