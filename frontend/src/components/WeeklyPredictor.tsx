@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, AlertTriangle, Target, BarChart3, Calendar, Clock, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trophy, AlertTriangle, Target, BarChart3, Calendar, Clock, Users } from 'lucide-react';
 import { nflApi } from '../api/nflApi';
+import PredictionCard from './PredictionCard';
 
 interface Game {
   game_id: string;
@@ -8,13 +9,21 @@ interface Game {
   home_team: string;
   game_date: string;
   game_time: string;
+  game_status: string;
+  week: number;
+  season: number;
   away_score?: number;
   home_score?: number;
   result?: number;
   total?: number;
   overtime?: number;
-  week?: number;
-  season?: number;
+  ai_prediction?: {
+    predicted_winner: string;
+    confidence: number;
+    upset_potential: number;
+    is_upset: boolean;
+    model_accuracy: number;
+  };
 }
 
 interface AIPrediction {
@@ -37,7 +46,7 @@ export default function WeeklyPredictor() {
   const [userPrediction, setUserPrediction] = useState('');
   const [confidence, setConfidence] = useState(5);
   const [loading, setLoading] = useState(false);
-  const [aiPrediction, setAiPrediction] = useState<AIPrediction | null>(null);
+
   const [weekInfo, setWeekInfo] = useState<{season: number, week: number, total_games: number} | null>(null);
 
   useEffect(() => {
@@ -58,7 +67,7 @@ export default function WeeklyPredictor() {
         return;
       }
       
-      const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game, index) => {
+      const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game) => {
         // Use real ML predictions from the API if available
         if (game.ai_prediction) {
           return {
@@ -69,7 +78,7 @@ export default function WeeklyPredictor() {
               predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
               key_factors: generateKeyFactors(),
               upset_potential: game.ai_prediction.upset_potential,
-              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team, game.ai_prediction.confidence)
+              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team)
             },
             is_upset_pick: game.ai_prediction.is_upset
           };
@@ -109,7 +118,7 @@ export default function WeeklyPredictor() {
         return;
       }
       
-      const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game, index) => {
+      const gamesWithPredictions: GameWithPrediction[] = gamesData.games.map((game) => {
         // Use real ML predictions from the API if available
         if (game.ai_prediction) {
           return {
@@ -120,7 +129,7 @@ export default function WeeklyPredictor() {
               predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
               key_factors: generateKeyFactors(),
               upset_potential: game.ai_prediction.upset_potential,
-              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team, game.ai_prediction.confidence)
+              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team)
             },
             is_upset_pick: game.ai_prediction.is_upset
           };
@@ -161,7 +170,7 @@ export default function WeeklyPredictor() {
     return factors.sort(() => Math.random() - 0.5).slice(0, 3);
   };
 
-  const generateAIAnalysis = (winner: string, away: string, home: string, confidence: number): string => {
+  const generateAIAnalysis = (winner: string, away: string, home: string): string => {
     const analyses = [
       `${winner} has shown consistent performance in recent weeks, particularly in key situations. Their defensive unit has been dominant against the run, which could neutralize ${winner === home ? away : home}'s offensive strategy.`,
       `The data suggests ${winner} has a significant advantage in this matchup. Their offensive efficiency in the red zone and ability to control time of possession gives them the edge.`,
@@ -172,7 +181,6 @@ export default function WeeklyPredictor() {
 
   const handleGameSelect = (game: GameWithPrediction) => {
     setSelectedGame(game);
-    setAiPrediction(game.ai_prediction);
     setUserPrediction('');
     setConfidence(5);
   };
@@ -208,10 +216,7 @@ export default function WeeklyPredictor() {
     return teamNames[teamCode] || teamCode;
   };
 
-  const getTeamLogo = (teamCode: string) => {
-    // Mock team logos - in production, you'd use real team logo URLs
-    return null;
-  };
+
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 80) return 'text-green-600 bg-green-100';
@@ -469,81 +474,20 @@ export default function WeeklyPredictor() {
         )}
 
         {/* All Games Grid */}
-        <div className="space-y-4">
+        <div className="space-y-8">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center">
             <BarChart3 className="w-6 h-6 mr-2 text-blue-500" />
             All Games This Week
           </h2>
           {/* Game Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
             {games.map((game, index) => (
-                <div
+              <div
                 key={game.game_id || index}
-                className={`bg-white rounded-lg shadow-md border-2 cursor-pointer transition-all hover:shadow-lg ${
-                  game.is_upset_pick ? 'border-red-300 bg-red-50' : 'border-gray-100'
-                }`}
+                className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
                 onClick={() => handleGameSelect(game)}
               >
-                <div className="p-4">
-                  {/* Game Header */}
-                  <div className="text-center mb-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">
-                      {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
-                    </h3>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {game.game_date} • {game.game_time}
-                    </div>
-                  </div>
-
-                  {/* Final Score (if available) */}
-                  {game.away_score !== undefined && game.home_score !== undefined && (
-                    <div className="text-center mb-3 p-2 bg-gray-50 rounded">
-                      <div className="text-lg font-bold text-gray-900">
-                        {game.away_score} - {game.home_score}
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        {game.away_score > game.home_score ? 
-                          `${getTeamName(game.away_team)} Wins` : 
-                          `${getTeamName(game.home_team)} Wins`
-                        }
-                        {game.overtime ? ' (OT)' : ''}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Prediction */}
-                  <div className="text-center">
-                    <div className="text-xs text-gray-600 mb-1">AI Pick:</div>
-                    <div className="font-semibold text-blue-600 text-sm">
-                      {getTeamName(game.ai_prediction.predicted_winner)}
-                    </div>
-                  </div>
-
-                  {/* Prediction Stats */}
-                  <div className="flex justify-between items-center mt-3">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500">Confidence</div>
-                      <div className={`text-xs px-2 py-1 rounded-full ${getConfidenceColor(game.ai_prediction.confidence)}`}>
-                        {game.ai_prediction.confidence}%
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500">Upset Potential</div>
-                      <div className={`text-xs px-2 py-1 rounded-full ${getUpsetPotentialColor(game.ai_prediction.upset_potential)}`}>
-                        {game.ai_prediction.upset_potential}%
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Upset Pick Badge */}
-                  {game.is_upset_pick && (
-                    <div className="mt-3 text-center">
-                      <span className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full border border-red-300">
-                        UPSET PICK
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <PredictionCard game={game} />
               </div>
             ))}
           </div>
