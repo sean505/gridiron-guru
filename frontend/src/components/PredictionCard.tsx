@@ -109,7 +109,12 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
           {/* Away Team */}
           <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.away_team)}</p>
-            <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.away_team)}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.away_team)}</h4>
+              {game.ai_prediction.is_upset && game.ai_prediction.predicted_winner === game.away_team && (
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              )}
+            </div>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
           </div>
@@ -137,7 +142,12 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
               </div>
             )}
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.home_team)}</p>
-            <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.home_team)}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.home_team)}</h4>
+              {game.ai_prediction.is_upset && game.ai_prediction.predicted_winner === game.home_team && (
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              )}
+            </div>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
           </div>
