@@ -379,39 +379,185 @@ async def get_games(season: int = None, week: Optional[int] = None):
             
         logger.info(f"Fetching games for season {season}, week {week}")
         
-        # Use simple fallback games data for now
-        fallback_games = [
-            {
-                "game_id": f"{season}_{week}_001",
-                "away_team": "BUF",
-                "home_team": "MIA", 
-                "game_date": "2025-09-08",
-                "game_time": "1:00 PM",
-                "game_status": "scheduled",
-                "week": week,
-                "season": season
-            },
-            {
-                "game_id": f"{season}_{week}_002", 
-                "away_team": "KC",
-                "home_team": "BAL",
-                "game_date": "2025-09-08", 
-                "game_time": "4:25 PM",
-                "game_status": "scheduled",
-                "week": week,
-                "season": season
-            },
-            {
-                "game_id": f"{season}_{week}_003",
-                "away_team": "SF", 
-                "home_team": "DAL",
-                "game_date": "2025-09-08",
-                "game_time": "8:20 PM", 
-                "game_status": "scheduled",
-                "week": week,
-                "season": season
-            }
-        ]
+        # Real 2025 NFL Week 1 schedule
+        if week == 1 and season == 2025:
+            real_games = [
+                {
+                    "game_id": f"{season}_{week}_001",
+                    "away_team": "DAL",
+                    "home_team": "PHI", 
+                    "game_date": "2025-09-04",
+                    "game_time": "8:20 PM",
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_002", 
+                    "away_team": "KC",
+                    "home_team": "LAC",
+                    "game_date": "2025-09-05", 
+                    "game_time": "8:00 PM",
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_003",
+                    "away_team": "TB", 
+                    "home_team": "ATL",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_004",
+                    "away_team": "CIN", 
+                    "home_team": "CLE",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_005",
+                    "away_team": "MIA", 
+                    "home_team": "IND",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_006",
+                    "away_team": "CAR", 
+                    "home_team": "JAX",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_007",
+                    "away_team": "LV", 
+                    "home_team": "NE",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_008",
+                    "away_team": "ARI", 
+                    "home_team": "NO",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_009",
+                    "away_team": "PIT", 
+                    "home_team": "NYJ",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_010",
+                    "away_team": "NYG", 
+                    "home_team": "WAS",
+                    "game_date": "2025-09-07",
+                    "game_time": "1:00 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_011",
+                    "away_team": "TEN", 
+                    "home_team": "DEN",
+                    "game_date": "2025-09-07",
+                    "game_time": "4:05 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_012",
+                    "away_team": "SF", 
+                    "home_team": "SEA",
+                    "game_date": "2025-09-07",
+                    "game_time": "4:05 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_013",
+                    "away_team": "DET", 
+                    "home_team": "GB",
+                    "game_date": "2025-09-07",
+                    "game_time": "4:25 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_014",
+                    "away_team": "HOU", 
+                    "home_team": "LAR",
+                    "game_date": "2025-09-07",
+                    "game_time": "4:25 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_015",
+                    "away_team": "BAL", 
+                    "home_team": "BUF",
+                    "game_date": "2025-09-07",
+                    "game_time": "8:20 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                },
+                {
+                    "game_id": f"{season}_{week}_016",
+                    "away_team": "MIN", 
+                    "home_team": "CHI",
+                    "game_date": "2025-09-08",
+                    "game_time": "8:15 PM", 
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                }
+            ]
+            fallback_games = real_games
+        else:
+            # Fallback for other weeks/seasons
+            fallback_games = [
+                {
+                    "game_id": f"{season}_{week}_001",
+                    "away_team": "BUF",
+                    "home_team": "MIA", 
+                    "game_date": "2025-09-08",
+                    "game_time": "1:00 PM",
+                    "game_status": "scheduled",
+                    "week": week,
+                    "season": season
+                }
+            ]
         
         # Add simple predictions to each game
         games_with_predictions = []
