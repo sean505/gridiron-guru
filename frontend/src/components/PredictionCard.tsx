@@ -14,9 +14,12 @@ interface PredictionCardProps {
     ai_prediction: {
       predicted_winner: string;
       confidence: number;
+      predicted_score: string;
+      key_factors: string[];
       upset_potential: number;
+      ai_analysis: string;
       is_upset: boolean;
-      model_accuracy: number;
+      model_accuracy?: number;
     };
   };
   userPick?: string;
@@ -177,8 +180,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
               </p>
             </div>
             <p className="text-purple-700 text-sm leading-5">
-              {game.ai_prediction.predicted_winner} has historically performed well in similar game conditions. 
-              Their coaching staff has demonstrated excellent game planning against this type of opponent.
+              {game.ai_prediction.ai_analysis}
             </p>
           </div>
           
