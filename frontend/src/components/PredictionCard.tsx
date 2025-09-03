@@ -103,13 +103,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
       </div>
 
       {/* Main Card */}
-      <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-4 lg:p-6 relative">
-        {/* MY PICK Badge - Top Right */}
-        {userPick && (
-          <div className="absolute top-4 right-4 bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1">
-            <span className="text-[#8c3e79] text-sm font-bold">MY PICK</span>
-          </div>
-        )}
+      <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-4 lg:p-6">
         {/* Stats Section */}
         <div className="flex justify-center gap-4 lg:gap-6 mb-6 lg:mb-8">
           {/* Away Team */}
@@ -123,6 +117,11 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
             </div>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
+            {userPick === game.away_team && (
+              <div className="bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1 mt-2">
+                <span className="text-[#8c3e79] text-sm font-bold">MY PICK</span>
+              </div>
+            )}
           </div>
 
           {/* Game Info */}
@@ -149,6 +148,11 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
             </div>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
+            {userPick === game.home_team && (
+              <div className="bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1 mt-2">
+                <span className="text-[#8c3e79] text-sm font-bold">MY PICK</span>
+              </div>
+            )}
           </div>
         </div>
 
