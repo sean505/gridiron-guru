@@ -51,6 +51,20 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
     return teamCities[teamCode] || teamCode;
   };
 
+  const getTeamNickname = (teamCode: string) => {
+    const teamNicknames: { [key: string]: string } = {
+      'BUF': 'Bills', 'MIA': 'Dolphins', 'NE': 'Patriots', 'NYJ': 'Jets',
+      'BAL': 'Ravens', 'CIN': 'Bengals', 'CLE': 'Browns', 'PIT': 'Steelers',
+      'HOU': 'Texans', 'IND': 'Colts', 'JAX': 'Jaguars', 'TEN': 'Titans',
+      'DEN': 'Broncos', 'KC': 'Chiefs', 'LV': 'Raiders', 'LAC': 'Chargers',
+      'DAL': 'Cowboys', 'NYG': 'Giants', 'PHI': 'Eagles', 'WAS': 'Commanders',
+      'CHI': 'Bears', 'DET': 'Lions', 'GB': 'Packers', 'MIN': 'Vikings',
+      'ATL': 'Falcons', 'CAR': 'Panthers', 'NO': 'Saints', 'TB': 'Buccaneers',
+      'ARI': 'Cardinals', 'LAR': 'Rams', 'SF': '49ers', 'SEA': 'Seahawks'
+    };
+    return teamNicknames[teamCode] || teamCode;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -91,11 +105,11 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
       {/* Main Card */}
       <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-4 lg:p-6">
         {/* Stats Section */}
-        <div className="flex flex-wrap justify-center gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className="flex justify-center gap-4 lg:gap-6 mb-6 lg:mb-8">
           {/* Away Team */}
           <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.away_team)}</p>
-            <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamName(game.away_team)}</h4>
+            <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.away_team)}</h4>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
           </div>
@@ -123,7 +137,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
               </div>
             )}
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.home_team)}</p>
-            <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamName(game.home_team)}</h4>
+            <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.home_team)}</h4>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
           </div>
