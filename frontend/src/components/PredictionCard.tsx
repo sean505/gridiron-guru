@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lightbulb, Circle } from 'lucide-react';
+import { Lightbulb, Circle, Flame } from 'lucide-react';
 
 interface PredictionCardProps {
   game: {
@@ -64,17 +64,23 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
     return timeString.replace(/\s*(AM|PM)/i, '').toLowerCase() + timeString.match(/\s*(AM|PM)/i)?.[1]?.toLowerCase();
   };
 
-  const bannerText = game.ai_prediction.is_upset ? "UPSET ALERT" : "LOCK IT IN";
-  const bannerBgColor = game.ai_prediction.is_upset ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-200";
-  const bannerTextColor = game.ai_prediction.is_upset ? "text-red-600" : "text-blue-600";
+  const bannerText = game.ai_prediction.is_upset ? "UPSET PICK" : "LOCK IT IN";
+  const bannerBgColor = game.ai_prediction.is_upset ? "bg-yellow-100 border-yellow-300" : "bg-blue-50 border-blue-200";
+  const bannerTextColor = game.ai_prediction.is_upset ? "text-orange-700" : "text-blue-600";
+  const bannerIcon = game.ai_prediction.is_upset ? "text-orange-500" : "text-blue-500";
+  const bannerBorderColor = game.ai_prediction.is_upset ? "border-orange-300" : "border-blue-300";
 
   return (
     <div className="w-full max-w-4xl mx-auto lg:max-w-none">
       {/* Banner Section */}
       <div className={`${bannerBgColor} border border-b-0 rounded-t-xl p-3 lg:p-4 shadow-sm`}>
         <div className="flex items-center gap-4">
-          <Lightbulb className="w-6 h-6 text-blue-500" />
-          <div className="flex-1 border-l border-blue-300 pl-4">
+          {game.ai_prediction.is_upset ? (
+            <Flame className={`w-6 h-6 ${bannerIcon}`} />
+          ) : (
+            <Lightbulb className={`w-6 h-6 ${bannerIcon}`} />
+          )}
+          <div className={`flex-1 border-l ${bannerBorderColor} pl-4`}>
             <h3 className={`text-xl font-extrabold ${bannerTextColor}`}>
               {bannerText}
             </h3>
