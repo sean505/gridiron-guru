@@ -61,12 +61,8 @@ def load_ml_models():
         return False
 
 def get_current_season():
-    """Get current NFL season"""
-    now = datetime.now()
-    if now.month >= 9:  # NFL season starts in September
-        return now.year
-    else:
-        return now.year - 1
+    """Get current NFL season - 2025"""
+    return 2025
 
 def get_current_week():
     """Get current NFL week based on date and time"""

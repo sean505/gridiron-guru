@@ -54,7 +54,7 @@ export default function WeeklyPredictor() {
         console.log('No games found or invalid data structure');
         // No games available
         setGames([]);
-        setWeekInfo({season: gamesData?.season || 2024, week: gamesData?.week || 1, total_games: 0});
+        setWeekInfo({season: gamesData?.season || 2025, week: gamesData?.week || 1, total_games: 0});
         return;
       }
       
@@ -111,7 +111,7 @@ export default function WeeklyPredictor() {
       console.error('Error loading current week games:', error);
       // Set fallback data on error
       setGames([]);
-      setWeekInfo({season: 2024, week: 1, total_games: 0});
+      setWeekInfo({season: 2025, week: 1, total_games: 0});
     } finally {
       setLoading(false);
     }
