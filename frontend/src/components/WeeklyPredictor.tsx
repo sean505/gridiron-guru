@@ -427,7 +427,7 @@ export default function WeeklyPredictor() {
                 AI Upset Picks
               </h2>
               <div className="space-y-6">
-                {games.filter(game => game.is_upset_pick).map((game, index) => (
+                {games.filter(game => game.ai_prediction?.is_upset).map((game, index) => (
                   <div
                     key={game.game_id || index}
                     className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
