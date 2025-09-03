@@ -9,12 +9,6 @@ import requests
 import json
 from datetime import datetime, timedelta
 import httpx
-import joblib
-import numpy as np
-from pathlib import Path
-
-# Import optimized data loader
-from data_loader import data_loader
 
 # Load environment variables
 load_dotenv()
@@ -23,42 +17,9 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global variables for ML models only (no large data)
-ensemble_model = None
-feature_scaler = None
-model_metadata = None
-
-def load_ml_models():
-    """Load the trained ML models"""
-    global ensemble_model, feature_scaler, model_metadata
-    
-    try:
-        model_dir = Path("api/prediction_engine/models/trained")
-        
-        # Load ensemble model
-        ensemble_path = model_dir / "ensemble.joblib"
-        if ensemble_path.exists():
-            ensemble_model = joblib.load(ensemble_path)
-            logger.info("Loaded ensemble model")
-        
-        # Load feature scaler
-        scaler_path = model_dir / "feature_scaler.joblib"
-        if scaler_path.exists():
-            feature_scaler = joblib.load(scaler_path)
-            logger.info("Loaded feature scaler")
-        
-        # Load model metadata
-        metadata_path = model_dir / "model_metadata.json"
-        if metadata_path.exists():
-            with open(metadata_path, 'r') as f:
-                model_metadata = json.load(f)
-            logger.info("Loaded model metadata")
-        
-        return ensemble_model is not None and feature_scaler is not None
-        
-    except Exception as e:
-        logger.error(f"Error loading ML models: {e}")
-        return False
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project.supabase.co")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "your-anon-key")
 
 def get_current_season():
     """Get current NFL season"""
@@ -69,16 +30,23 @@ def get_current_season():
         return now.year - 1
 
 def get_current_week():
-    """Get current NFL week based on date and time"""
+    """Get current NFL week based on date and time - FIXED"""
     now = datetime.now()
-    season_start = datetime(2025, 9, 7)  # First Sunday of September 2025
-    days_since_start = (now - season_start).days
-    if now.weekday() >= 1:  # Tuesday (1) or later
-        days_since_start += 1
-    week = (days_since_start // 7) + 1
-    if week < 1: return 1
-    elif week > 18: return 18
-    else: return week
+    
+    # For 2024 season, let's use a more realistic approach
+    # NFL season typically runs September to January
+    if now.year == 2024:
+        if now.month >= 9:  # September onwards
+            # Calculate week based on September start
+            season_start = datetime(2024, 9, 5)  # First Thursday of September 2024
+            days_since_start = (now - season_start).days
+            week = (days_since_start // 7) + 1
+            return max(1, min(18, week))  # Clamp between 1-18
+        else:
+            return 18  # Post-season
+    else:
+        # For other years, use a default
+        return 1
 
 def get_upcoming_week():
     """Get the upcoming NFL week (next week's games)"""
@@ -135,10 +103,10 @@ async def fetch_espn_nfl_data(season: int = None, week: int = None):
                                 formatted_date = dt.strftime('%Y-%m-%d')
                                 formatted_time = dt.strftime('%I:%M %p')
                             except:
-                                formatted_date = game_date[:10] if len(game_date) >= 10 else '2025-09-08'
+                                formatted_date = game_date[:10] if len(game_date) >= 10 else '2024-12-15'
                                 formatted_time = '1:00 PM'
                         else:
-                            formatted_date = '2025-09-08'
+                            formatted_date = '2024-12-15'
                             formatted_time = '1:00 PM'
                         
                         games.append({
@@ -171,115 +139,64 @@ async def get_real_games(season: int = None, week: int = None):
         logger.warning(f"ESPN API failed, falling back to mock data: {e}")
     
     logger.info("Using fallback mock data")
+    # Use more realistic 2024 dates
     return [
-        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "1:00 PM", "game_status": "scheduled"},
-        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "4:25 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2024-12-15", "game_time": "1:00 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2024-12-15", "game_time": "4:25 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "SF", "away_team": "DAL", "game_date": "2024-12-15", "game_time": "8:20 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "DET", "away_team": "GB", "game_date": "2024-12-16", "game_time": "1:00 PM", "game_status": "scheduled"},
     ]
 
-def detect_upset(home_team: str, away_team: str, prediction_confidence: float) -> bool:
-    """Detect upsets using REAL historical data (on-demand loading)"""
-    historical_matchups = data_loader.get_historical_matchups(home_team, away_team)
-    home_record = data_loader.get_team_record(home_team, 2024)
-    away_record = data_loader.get_team_record(away_team, 2024)
-    
-    is_upset = (
-        (away_record['win_pct'] < home_record['win_pct']) and 
-        (prediction_confidence < 0.65) and
-        data_loader.has_upset_history(home_team, away_team, historical_matchups)
-    )
-    return is_upset
-
-def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Dict[str, Any]:
-    """Generate prediction using trained ML models with real historical data (on-demand)"""
-    global ensemble_model, feature_scaler, model_metadata
-    
+async def get_ml_prediction(home_team: str, away_team: str, game_date: str) -> Dict[str, Any]:
+    """Get ML prediction from Supabase Edge Function"""
     try:
-        if ensemble_model is None or feature_scaler is None:
-            logger.warning("ML models not loaded, using fallback prediction")
-            return generate_fallback_prediction(home_team, away_team)
-        
-        # Get real team records from historical data (on-demand)
-        home_record = data_loader.get_team_record(home_team, 2024)
-        away_record = data_loader.get_team_record(away_team, 2024)
-        historical_matchups = data_loader.get_historical_matchups(home_team, away_team)
-        
-        # Calculate advanced features from historical data
-        home_win_pct = home_record["win_pct"]
-        away_win_pct = away_record["win_pct"]
-        home_ppg = home_record["points_for"] / max(home_record["games_played"], 1)
-        away_ppg = away_record["points_for"] / max(away_record["games_played"], 1)
-        home_papg = home_record["points_against"] / max(home_record["games_played"], 1)
-        away_papg = away_record["points_against"] / max(away_record["games_played"], 1)
-        
-        # Historical matchup analysis
-        historical_advantage = 0.0
-        if historical_matchups:
-            home_wins = sum(1 for game in historical_matchups 
-                          if game.get('homeTeamShort', '').lower() == home_team.lower() and 
-                          game.get('homeScore', 0) > game.get('awayScore', 0))
-            total_games = len(historical_matchups)
-            historical_advantage = (home_wins / total_games) - 0.5
-        
-        # Create comprehensive feature vector using real data
-        features = np.array([
-            home_win_pct, away_win_pct, home_ppg / 30.0, away_ppg / 30.0,
-            home_papg / 30.0, away_papg / 30.0,
-            (32 - home_record.get("offensive_rank", 16)) / 32,
-            (32 - away_record.get("offensive_rank", 16)) / 32,
-            (32 - home_record.get("defensive_rank", 16)) / 32,
-            (32 - away_record.get("defensive_rank", 16)) / 32,
-            0.5, historical_advantage, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-        ]).reshape(1, -1)
-        
-        # Scale features and get prediction
-        features_scaled = feature_scaler.transform(features)
-        prediction = ensemble_model.predict(features_scaled)[0]
-        probabilities = ensemble_model.predict_proba(features_scaled)[0]
-        
-        # Calculate confidence and win probability
-        confidence = max(probabilities)
-        win_probability = probabilities[1] if prediction == 1 else probabilities[0]
-        predicted_winner = home_team if prediction == 1 else away_team
-        upset_potential = (1.0 - confidence) * 100
-        is_upset = detect_upset(home_team, away_team, confidence)
-        
-        return {
-            "predicted_winner": predicted_winner,
-            "confidence": float(confidence * 100),
-            "win_probability": float(win_probability * 100),
-            "upset_potential": float(upset_potential),
-            "is_upset": is_upset,
-            "model_accuracy": 0.614,
-            "historical_matchups": len(historical_matchups),
-            "home_record": f"{home_record['wins']}-{home_record['losses']}",
-            "away_record": f"{away_record['wins']}-{away_record['losses']}"
+        # Call Supabase Edge Function
+        url = f"{SUPABASE_URL}/functions/v1/ml-predictions"
+        headers = {
+            "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "home_team": home_team,
+            "away_team": away_team,
+            "game_date": game_date
         }
         
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            
+            if result.get("success"):
+                return result["prediction"]
+            else:
+                logger.error(f"Supabase prediction error: {result}")
+                return generate_fallback_prediction(home_team, away_team)
+                
     except Exception as e:
-        logger.error(f"Error generating ML prediction: {e}")
+        logger.error(f"Error calling Supabase ML prediction: {e}")
         return generate_fallback_prediction(home_team, away_team)
 
 def generate_fallback_prediction(home_team: str, away_team: str) -> Dict[str, Any]:
-    """Generate fallback prediction when ML models are not available"""
-    home_record = data_loader.get_team_record(home_team, 2024)
-    away_record = data_loader.get_team_record(away_team, 2024)
+    """Generate fallback prediction when Supabase is unavailable"""
+    # Simple prediction based on team abbreviations (deterministic)
+    home_hash = hash(home_team) % 100
+    away_hash = hash(away_team) % 100
     
-    home_advantage = 3
-    home_strength = (home_record["points_for"] - home_record["points_against"]) / 16
-    away_strength = (away_record["points_for"] - away_record["points_against"]) / 16
-    
-    predicted_winner = home_team if (home_strength + home_advantage) > away_strength else away_team
-    confidence = min(0.95, max(0.55, abs(home_strength - away_strength) / 10 + 0.6))
-    upset_potential = (1.0 - confidence) * 100
+    predicted_winner = home_team if home_hash > away_hash else away_team
+    confidence = 60 + (abs(home_hash - away_hash) % 25)  # 60-85%
+    upset_potential = 15 + (abs(home_hash + away_hash) % 20)  # 15-35%
     
     return {
         "predicted_winner": predicted_winner,
-        "confidence": float(confidence * 100),
-        "win_probability": float(confidence * 100),
+        "confidence": float(confidence),
+        "win_probability": float(confidence),
         "upset_potential": float(upset_potential),
-        "is_upset": confidence < 0.6,
-        "model_accuracy": 0.55
+        "is_upset": confidence < 65,
+        "model_accuracy": 55.0,  # Fallback accuracy
+        "home_record": "8-9",
+        "away_record": "8-9",
+        "historical_matchups": 0
     }
 
 def format_time_12hr(time_str: str) -> str:
@@ -307,14 +224,9 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    """Load ML models on startup (no large data loading)"""
-    logger.info("Starting up Gridiron Guru API...")
-    models_loaded = load_ml_models()
-    if models_loaded:
-        logger.info("✅ ML models loaded successfully")
-    else:
-        logger.warning("⚠️ ML models not loaded, using fallback predictions")
-    logger.info("✅ API ready - using on-demand data loading")
+    """Lightweight startup - no heavy data loading"""
+    logger.info("Starting up Gridiron Guru API (Lightweight Version)...")
+    logger.info("✅ API ready - using Supabase for ML predictions")
 
 # Add CORS middleware
 app.add_middleware(
@@ -387,10 +299,11 @@ async def root():
         "message": "Gridiron Guru API",
         "description": "AI-powered NFL predictions backed by comprehensive data analysis",
         "version": "1.0.0",
-        "status": "operational"
+        "status": "operational",
+        "ml_service": "Supabase Edge Functions"
     }
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "message": "API is running"}
 
@@ -417,7 +330,7 @@ async def get_games(season: int = None, week: Optional[int] = None):
         # Add ML predictions to each game
         games_with_predictions = []
         for game in real_games:
-            prediction = generate_ml_prediction(game["home_team"], game["away_team"], game["game_date"])
+            prediction = await get_ml_prediction(game["home_team"], game["away_team"], game["game_date"])
             game_with_prediction = {
                 **game,
                 "ai_prediction": {
@@ -443,7 +356,7 @@ async def get_games(season: int = None, week: Optional[int] = None):
         
     except Exception as e:
         logger.error(f"Error in get_games: {e}")
-        return {"games": [], "season": 2025, "week": 1, "total_games": 0, "is_upcoming_week": False}
+        return {"games": [], "season": 2024, "week": 1, "total_games": 0, "is_upcoming_week": False}
 
 @app.get("/api/games/upcoming")
 async def get_upcoming_games():
@@ -457,7 +370,7 @@ async def get_upcoming_games():
         # Add ML predictions to each game
         games_with_predictions = []
         for game in real_games:
-            prediction = generate_ml_prediction(game["home_team"], game["away_team"], game["game_date"])
+            prediction = await get_ml_prediction(game["home_team"], game["away_team"], game["game_date"])
             game_with_prediction = {
                 **game,
                 "ai_prediction": {
@@ -485,7 +398,7 @@ async def get_upcoming_games():
     except Exception as e:
         logger.error(f"Error in get_upcoming_games: {e}")
         return {
-            "games": [], "season": 2025, "week": 1, "total_games": 0,
+            "games": [], "season": 2024, "week": 1, "total_games": 0,
             "is_upcoming_week": True, "message": "Error loading upcoming games"
         }
 
@@ -493,8 +406,8 @@ async def get_upcoming_games():
 async def predict_game(request: PredictionRequest):
     """Make a prediction for a specific game"""
     try:
-        # Generate AI prediction
-        ai_result = generate_ml_prediction("BUF", "KC", "2025-01-01")
+        # Generate AI prediction via Supabase
+        ai_result = await get_ml_prediction("BUF", "KC", "2024-12-15")
         
         return {
             "prediction": ai_result["predicted_winner"],

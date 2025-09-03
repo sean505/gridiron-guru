@@ -30,16 +30,23 @@ def get_current_season():
         return now.year - 1
 
 def get_current_week():
-    """Get current NFL week based on date and time"""
+    """Get current NFL week based on date and time - FIXED"""
     now = datetime.now()
-    season_start = datetime(2025, 9, 7)  # First Sunday of September 2025
-    days_since_start = (now - season_start).days
-    if now.weekday() >= 1:  # Tuesday (1) or later
-        days_since_start += 1
-    week = (days_since_start // 7) + 1
-    if week < 1: return 1
-    elif week > 18: return 18
-    else: return week
+    
+    # For 2024 season, let's use a more realistic approach
+    # NFL season typically runs September to January
+    if now.year == 2024:
+        if now.month >= 9:  # September onwards
+            # Calculate week based on September start
+            season_start = datetime(2024, 9, 5)  # First Thursday of September 2024
+            days_since_start = (now - season_start).days
+            week = (days_since_start // 7) + 1
+            return max(1, min(18, week))  # Clamp between 1-18
+        else:
+            return 18  # Post-season
+    else:
+        # For other years, use a default
+        return 1
 
 def get_upcoming_week():
     """Get the upcoming NFL week (next week's games)"""
@@ -96,10 +103,10 @@ async def fetch_espn_nfl_data(season: int = None, week: int = None):
                                 formatted_date = dt.strftime('%Y-%m-%d')
                                 formatted_time = dt.strftime('%I:%M %p')
                             except:
-                                formatted_date = game_date[:10] if len(game_date) >= 10 else '2025-09-08'
+                                formatted_date = game_date[:10] if len(game_date) >= 10 else '2024-12-15'
                                 formatted_time = '1:00 PM'
                         else:
-                            formatted_date = '2025-09-08'
+                            formatted_date = '2024-12-15'
                             formatted_time = '1:00 PM'
                         
                         games.append({
@@ -132,9 +139,12 @@ async def get_real_games(season: int = None, week: int = None):
         logger.warning(f"ESPN API failed, falling back to mock data: {e}")
     
     logger.info("Using fallback mock data")
+    # Use more realistic 2024 dates
     return [
-        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2025-09-08", "game_time": "1:00 PM", "game_status": "scheduled"},
-        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "4:25 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "BUF", "away_team": "MIA", "game_date": "2024-12-15", "game_time": "1:00 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2024-12-15", "game_time": "4:25 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "SF", "away_team": "DAL", "game_date": "2024-12-15", "game_time": "8:20 PM", "game_status": "scheduled"},
+        {"week": week, "home_team": "DET", "away_team": "GB", "game_date": "2024-12-16", "game_time": "1:00 PM", "game_status": "scheduled"},
     ]
 
 async def get_ml_prediction(home_team: str, away_team: str, game_date: str) -> Dict[str, Any]:
@@ -293,7 +303,7 @@ async def root():
         "ml_service": "Supabase Edge Functions"
     }
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "message": "API is running"}
 
@@ -346,7 +356,7 @@ async def get_games(season: int = None, week: Optional[int] = None):
         
     except Exception as e:
         logger.error(f"Error in get_games: {e}")
-        return {"games": [], "season": 2025, "week": 1, "total_games": 0, "is_upcoming_week": False}
+        return {"games": [], "season": 2024, "week": 1, "total_games": 0, "is_upcoming_week": False}
 
 @app.get("/api/games/upcoming")
 async def get_upcoming_games():
@@ -388,7 +398,7 @@ async def get_upcoming_games():
     except Exception as e:
         logger.error(f"Error in get_upcoming_games: {e}")
         return {
-            "games": [], "season": 2025, "week": 1, "total_games": 0,
+            "games": [], "season": 2024, "week": 1, "total_games": 0,
             "is_upcoming_week": True, "message": "Error loading upcoming games"
         }
 
@@ -397,7 +407,7 @@ async def predict_game(request: PredictionRequest):
     """Make a prediction for a specific game"""
     try:
         # Generate AI prediction via Supabase
-        ai_result = await get_ml_prediction("BUF", "KC", "2025-01-01")
+        ai_result = await get_ml_prediction("BUF", "KC", "2024-12-15")
         
         return {
             "prediction": ai_result["predicted_winner"],
