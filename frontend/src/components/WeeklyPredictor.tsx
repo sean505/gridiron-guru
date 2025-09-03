@@ -33,6 +33,7 @@ interface AIPrediction {
   key_factors: string[];
   upset_potential: number;
   ai_analysis: string;
+  is_upset: boolean;
 }
 
 interface GameWithPrediction extends Game {
@@ -78,7 +79,8 @@ export default function WeeklyPredictor() {
               predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
               key_factors: generateKeyFactors(),
               upset_potential: game.ai_prediction.upset_potential,
-              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team)
+              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team),
+              is_upset: game.ai_prediction.is_upset
             },
             is_upset_pick: game.ai_prediction.is_upset
           };
@@ -129,7 +131,8 @@ export default function WeeklyPredictor() {
               predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
               key_factors: generateKeyFactors(),
               upset_potential: game.ai_prediction.upset_potential,
-              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team)
+              ai_analysis: generateAIAnalysis(game.ai_prediction.predicted_winner, game.away_team, game.home_team),
+              is_upset: game.ai_prediction.is_upset
             },
             is_upset_pick: game.ai_prediction.is_upset
           };
@@ -427,7 +430,7 @@ export default function WeeklyPredictor() {
                 AI Upset Picks
               </h2>
               <div className="space-y-6">
-                {games.filter(game => game.ai_prediction?.is_upset).map((game, index) => (
+                {games.filter(game => game.is_upset_pick).map((game, index) => (
                   <div
                     key={game.game_id || index}
                     className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
