@@ -150,6 +150,12 @@ export default function HomePage() {
               >
                 Make Your Picks
               </Link>
+              <Link
+                to="/simulation"
+                className="bg-purple-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl"
+              >
+                View Simulation
+              </Link>
             </div>
           </div>
         </div>
