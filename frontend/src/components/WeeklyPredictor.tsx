@@ -421,17 +421,7 @@ export default function WeeklyPredictor() {
         </div>
 
         {/* Upset Picks Section */}
-        {(() => {
-          const upsetGames = games.filter(g => g.is_upset_pick);
-          console.log('Total games:', games.length);
-          console.log('Upset games found:', upsetGames.length);
-          console.log('Games data:', games.map(g => ({ 
-            teams: `${g.away_team} @ ${g.home_team}`, 
-            is_upset_pick: g.is_upset_pick,
-            ai_prediction_is_upset: g.ai_prediction?.is_upset 
-          })));
-          return upsetGames.length > 0;
-        })() && (
+        {games.filter(g => g.is_upset_pick).length > 0 && (
           <div className="space-y-4">
             {/* AI Upset Picks */}
             <div className="mb-8">
