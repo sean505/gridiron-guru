@@ -37,31 +37,38 @@ class OptimizedDataLoader:
             
             # Map team abbreviations to actual abbreviations used in game log
             team_abbrev_mapping = {
-                'kc': 'kan',
-                'buf': 'buf',
-                'sf': 'sfo',
-                'dal': 'dal',
-                'bal': 'rav',
-                'mia': 'mia',
-                'det': 'det',
-                'gb': 'gnb',
-                'hou': 'htx',
-                'ind': 'clt',
-                'jax': 'jax',
-                'lv': 'rai',
-                'lac': 'sdg',
-                'lar': 'ram',
-                'min': 'min',
-                'ne': 'nwe',
-                'no': 'nor',
-                'nyg': 'nyg',
-                'nyj': 'nyj',
-                'phi': 'phi',
-                'pit': 'pit',
-                'sea': 'sea',
-                'tb': 'tam',
-                'ten': 'oti',
-                'was': 'was'
+                'kc': 'kan',      # Kansas City Chiefs
+                'buf': 'buf',     # Buffalo Bills
+                'sf': 'sfo',      # San Francisco 49ers
+                'dal': 'dal',     # Dallas Cowboys
+                'bal': 'rav',     # Baltimore Ravens
+                'mia': 'mia',     # Miami Dolphins
+                'det': 'det',     # Detroit Lions
+                'gb': 'gnb',      # Green Bay Packers
+                'hou': 'htx',     # Houston Texans
+                'ind': 'clt',     # Indianapolis Colts
+                'jax': 'jax',     # Jacksonville Jaguars
+                'lv': 'rai',      # Las Vegas Raiders
+                'lac': 'sdg',     # Los Angeles Chargers
+                'lar': 'ram',     # Los Angeles Rams
+                'min': 'min',     # Minnesota Vikings
+                'ne': 'nwe',      # New England Patriots
+                'no': 'nor',      # New Orleans Saints
+                'nyg': 'nyg',     # New York Giants
+                'nyj': 'nyj',     # New York Jets
+                'phi': 'phi',     # Philadelphia Eagles
+                'pit': 'pit',     # Pittsburgh Steelers
+                'sea': 'sea',     # Seattle Seahawks
+                'tb': 'tam',      # Tampa Bay Buccaneers
+                'ten': 'oti',     # Tennessee Titans
+                'was': 'was',     # Washington Commanders
+                'atl': 'atl',     # Atlanta Falcons
+                'car': 'car',     # Carolina Panthers
+                'chi': 'chi',     # Chicago Bears
+                'cin': 'cin',     # Cincinnati Bengals
+                'cle': 'cle',     # Cleveland Browns
+                'den': 'den',     # Denver Broncos
+                'ari': 'crd'      # Arizona Cardinals
             }
             
             home_abbrev = team_abbrev_mapping.get(home_team_lower, home_team_lower)

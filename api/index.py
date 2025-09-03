@@ -912,9 +912,8 @@ async def get_standings():
 async def get_team_stats(team: str):
     """Get team statistics from 2008-2024 historical data"""
     try:
-        from data_loader import OptimizedDataLoader
+        from data_loader import data_loader
         
-        data_loader = OptimizedDataLoader()
         team_record = data_loader.get_team_record(team, 2024)  # Get latest season data
         
         return {
@@ -935,10 +934,19 @@ async def get_team_stats(team: str):
 async def get_historical_matchups(home_team: str, away_team: str):
     """Get historical matchups between two teams from 2008-2024 data"""
     try:
-        from data_loader import OptimizedDataLoader
+        from data_loader import data_loader
         
-        data_loader = OptimizedDataLoader()
+        # Debug logging
+        print(f"DEBUG: Looking up matchups for {home_team} vs {away_team}")
+        print(f"DEBUG: Data loader instance: {data_loader}")
+        print(f"DEBUG: Data loader type: {type(data_loader)}")
         matchups = data_loader.get_historical_matchups(home_team, away_team)
+        print(f"DEBUG: Found {len(matchups)} matchups for {home_team} vs {away_team}")
+        if len(matchups) == 0:
+            print(f"DEBUG: No matchups found for {home_team} vs {away_team}")
+            # Test the mapping directly
+            home_abbrev = data_loader._game_log_cache.get(f"{home_team.lower()}_{away_team.lower()}", "not cached")
+            print(f"DEBUG: Cache result: {len(home_abbrev) if isinstance(home_abbrev, list) else 'not a list'}")
         
         return {
             "home_team": home_team,
