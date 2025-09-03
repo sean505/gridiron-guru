@@ -20,7 +20,7 @@ interface GameResult {
   home_team: string;
   away_team: string;
   home_score: number;
-  away_score: string;
+  away_score: number;
   winner: string;
   game_date: string;
   week: number;
@@ -37,9 +37,9 @@ const Simulation: React.FC = () => {
   const actualGameResult: GameResult = {
     home_team: "DEN",
     away_team: "KC", 
-    home_score: 13,
-    away_score: "17",
-    winner: "KC",
+    home_score: 38,
+    away_score: 0,
+    winner: "DEN",
     game_date: "2025-01-05",
     week: 18,
     season: 2024
@@ -67,24 +67,52 @@ const Simulation: React.FC = () => {
           throw new Error('Failed to get prediction');
         }
 
-        const data = await response.json();
+        const predictionData = await response.json();
         
-        // For this simulation, we'll create a realistic prediction
-        // based on the actual game context
-        const simulationPrediction: PredictionResult = {
-          predicted_winner: "KC", // Chiefs were favored
-          confidence: 68,
-          win_probability: 68,
-          upset_potential: 32,
-          is_upset: false,
-          model_accuracy: 61.4,
-          home_record: "8-9",
+        // Use the real prediction from the ML engine
+        const realPrediction: PredictionResult = {
+          predicted_winner: predictionData.prediction,
+          confidence: predictionData.confidence_score,
+          win_probability: predictionData.confidence_score,
+          upset_potential: 100 - predictionData.confidence_score,
+          is_upset: false, // Will be determined by comparing to actual result
+          model_accuracy: 61.4, // This could come from the API too
+          home_record: "8-9", // These could also be fetched from API
           away_record: "11-6",
           historical_matchups: 12
         };
 
-        setPrediction(simulationPrediction);
-        setActualResult(actualGameResult);
+        // Try to fetch actual historical game data
+        try {
+          const historicalResponse = await fetch(`/api/games?season=2024&week=18&home_team=DEN&away_team=KC`);
+          if (historicalResponse.ok) {
+            const historicalData = await historicalResponse.json();
+            // Use real historical data if available
+            if (historicalData.games && historicalData.games.length > 0) {
+              const game = historicalData.games[0];
+              setActualResult({
+                home_team: "DEN",
+                away_team: "KC",
+                home_score: game.HomeScore || 38,
+                away_score: game.AwayScore || 0,
+                winner: game.Winner === 1 ? "DEN" : "KC",
+                game_date: "2025-01-05",
+                week: 18,
+                season: 2024
+              });
+            } else {
+              // Fallback to corrected hardcoded data
+              setActualResult(actualGameResult);
+            }
+          } else {
+            setActualResult(actualGameResult);
+          }
+        } catch (historicalError) {
+          // Fallback to corrected hardcoded data
+          setActualResult(actualGameResult);
+        }
+
+        setPrediction(realPrediction);
         
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -351,7 +379,7 @@ const Simulation: React.FC = () => {
                   The actual winner was <strong className="text-white">{getTeamName(actualResult?.winner || '')}</strong> with a final score of <strong className="text-white">{actualResult?.home_score} - {actualResult?.away_score}</strong>.
                 </p>
                 <p>
-                  This simulation demonstrates the AI's prediction accuracy in a real game scenario from the 2024 season.
+                  This was a major upset! The Broncos dominated with a 38-0 shutout victory, completely defying expectations and demonstrating why football predictions can be so challenging.
                 </p>
               </div>
             </div>
