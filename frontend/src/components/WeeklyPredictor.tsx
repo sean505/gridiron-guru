@@ -75,31 +75,10 @@ export default function WeeklyPredictor() {
           };
         }
         
-        // Fallback to deterministic hash-based predictions if API doesn't provide them
-        const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
-          a = ((a << 5) - a) + b.charCodeAt(0);
-          return a & a;
-        }, 0);
-        
-        const isHomeWin = (Math.abs(gameHash) % 100) > 45;
-        const predictedWinner = isHomeWin ? game.home_team : game.away_team;
-        const confidence = 65 + (Math.abs(gameHash) % 20);
-        const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20);
-        const isUpsetPick = confidence < 70 && upsetPotential > 25;
-        
-        return {
-          ...game,
-          ai_prediction: {
-            predicted_winner: predictedWinner,
-            confidence,
-            predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
-            key_factors: generateKeyFactors(),
-            upset_potential: upsetPotential,
-            ai_analysis: generateAIAnalysis(predictedWinner, game.away_team, game.home_team, confidence)
-          },
-          is_upset_pick: isUpsetPick
-        };
-      });
+        // If no API prediction data, skip this game (don't use hardcoded fallbacks)
+        console.warn(`No AI prediction data for game: ${game.away_team} @ ${game.home_team}`);
+        return null;
+      }).filter(game => game !== null);
       
       setGames(gamesWithPredictions);
       setWeekInfo({
@@ -147,31 +126,10 @@ export default function WeeklyPredictor() {
           };
         }
         
-        // Fallback to deterministic hash-based predictions if API doesn't provide them
-        const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
-          a = ((a << 5) - a) + b.charCodeAt(0);
-          return a & a;
-        }, 0);
-        
-        const isHomeWin = (Math.abs(gameHash) % 100) > 45;
-        const predictedWinner = isHomeWin ? game.home_team : game.away_team;
-        const confidence = 65 + (Math.abs(gameHash) % 20);
-        const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20);
-        const isUpsetPick = confidence < 70 && upsetPotential > 25;
-        
-        return {
-          ...game,
-          ai_prediction: {
-            predicted_winner: predictedWinner,
-            confidence,
-            predicted_score: `${Math.floor(Math.random() * 14) + 17}-${Math.floor(Math.random() * 14) + 17}`,
-            key_factors: generateKeyFactors(),
-            upset_potential: upsetPotential,
-            ai_analysis: generateAIAnalysis(predictedWinner, game.away_team, game.home_team, confidence)
-          },
-          is_upset_pick: isUpsetPick
-        };
-      });
+        // If no API prediction data, skip this game (don't use hardcoded fallbacks)
+        console.warn(`No AI prediction data for game: ${game.away_team} @ ${game.home_team}`);
+        return null;
+      }).filter(game => game !== null);
       
       setGames(gamesWithPredictions);
       setWeekInfo({

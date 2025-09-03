@@ -31,62 +31,16 @@ export default function HomePage() {
             };
           }
           
-          // Fallback to deterministic predictions if API doesn't provide them
-          const gameHash = `${game.home_team}-${game.away_team}-${game.game_date}`.split('').reduce((a, b) => {
-            a = ((a << 5) - a) + b.charCodeAt(0);
-            return a & a;
-          }, 0);
-          
-          const confidence = 65 + (Math.abs(gameHash) % 20); // 65-85%
-          const upsetPotential = 15 + (Math.abs(gameHash * 2) % 20); // 15-35%
-          const isUpset = confidence < 70 && upsetPotential > 25;
-          
-          return {
-            id: index + 1,
-            away_team: game.away_team,
-            home_team: game.home_team,
-            ai_pick: (Math.abs(gameHash) % 100) > 45 ? game.home_team : game.away_team,
-            confidence,
-            upset_potential: upsetPotential,
-            is_upset: isUpset,
-            game_date: game.game_date,
-            game_time: game.game_time
-          };
-        });
+          // If no API prediction data, skip this game (don't use hardcoded fallbacks)
+          console.warn(`No AI prediction data for featured game: ${game.away_team} @ ${game.home_team}`);
+          return null;
+        }).filter(prediction => prediction !== null);
         
         setFeaturedPredictions(predictions);
       } catch (error) {
         console.error('Error fetching games:', error);
-        // Fallback to mock data
-        setFeaturedPredictions([
-          {
-            id: 1,
-            away_team: 'BUF',
-            home_team: 'KC',
-            ai_pick: 'KC',
-            confidence: 78,
-            upset_potential: 22,
-            is_upset: false
-          },
-          {
-            id: 2,
-            away_team: 'SF',
-            home_team: 'DAL',
-            ai_pick: 'SF',
-            confidence: 82,
-            upset_potential: 18,
-            is_upset: false
-          },
-          {
-            id: 3,
-            away_team: 'CIN',
-            home_team: 'BAL',
-            ai_pick: 'CIN',
-            confidence: 65,
-            upset_potential: 35,
-            is_upset: true
-          }
-        ]);
+        // No fallback data - only use live API data
+        setFeaturedPredictions([]);
       } finally {
         setLoading(false);
       }
