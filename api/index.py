@@ -172,10 +172,79 @@ async def get_real_games(season: int = None, week: int = None):
         {"week": week, "home_team": "KC", "away_team": "BAL", "game_date": "2025-09-08", "game_time": "4:25 PM", "game_status": "scheduled"},
     ]
 
-def detect_upset(home_team: str, away_team: str, prediction_confidence: float) -> bool:
-    """Detect upsets using simple logic (no data_loader dependency)"""
-    # Simple upset detection based on confidence level
-    return prediction_confidence < 0.65
+def calculate_composite_upset_score(home_team: str, away_team: str, predicted_winner: str, 
+                                   home_record: dict, away_record: dict, 
+                                   historical_matchups: list = None) -> float:
+    """Calculate composite upset score based on multiple factors"""
+    try:
+        # Factor 1: Win percentage differential (30% weight)
+        home_win_pct = home_record.get('win_pct', 0.5)
+        away_win_pct = away_record.get('win_pct', 0.5)
+        win_pct_diff = abs(home_win_pct - away_win_pct)
+        factor1 = win_pct_diff * 0.3
+        
+        # Factor 2: Away team winning (20% weight)
+        factor2 = 0.2 if predicted_winner == away_team else 0.0
+        
+        # Factor 3: Record differential (10% weight)
+        home_wins = home_record.get('wins', 0)
+        away_wins = away_record.get('wins', 0)
+        record_diff = abs(home_wins - away_wins)
+        factor3 = min(record_diff / 20.0, 1.0) * 0.1
+        
+        # Factor 4: Historical matchup (5% weight)
+        factor4 = 0.0
+        if historical_matchups:
+            # Calculate historical win percentage for predicted winner
+            total_games = len(historical_matchups)
+            if total_games > 0:
+                winner_wins = 0
+                for game in historical_matchups:
+                    if game.get('Winner') == 1 and predicted_winner == home_team:
+                        winner_wins += 1
+                    elif game.get('Winner') == 0 and predicted_winner == away_team:
+                        winner_wins += 1
+                
+                historical_win_pct = winner_wins / total_games
+                # Lower historical win rate = higher upset potential
+                factor4 = (1.0 - historical_win_pct) * 0.05
+        
+        # Composite score (0-1 scale)
+        composite_score = factor1 + factor2 + factor3 + factor4
+        
+        return min(composite_score, 1.0)
+        
+    except Exception as e:
+        logger.warning(f"Error calculating composite upset score: {e}")
+        return 0.0
+
+def detect_upset(home_team: str, away_team: str, predicted_winner: str, 
+                prediction_confidence: float, home_record: dict = None, 
+                away_record: dict = None, historical_matchups: list = None) -> tuple:
+    """Detect upsets using optimal thresholds from historical analysis"""
+    # Optimal thresholds from historical analysis (2008-2024 data)
+    CONFIDENCE_THRESHOLD = 60  # Confidence below 60%
+    COMPOSITE_THRESHOLD = 0.20  # Composite score above 0.20
+    
+    # Calculate composite upset score
+    composite_score = calculate_composite_upset_score(
+        home_team, away_team, predicted_winner, 
+        home_record or {'win_pct': 0.5, 'wins': 0}, 
+        away_record or {'win_pct': 0.5, 'wins': 0}, 
+        historical_matchups
+    )
+    
+    # Determine if this is an upset using optimal thresholds
+    is_upset = (prediction_confidence < CONFIDENCE_THRESHOLD and 
+                composite_score > COMPOSITE_THRESHOLD)
+    
+    # Calculate upset probability (0-100 scale)
+    upset_probability = min(100, max(0, 
+        (100 - prediction_confidence) * 0.6 +  # 60% weight on confidence
+        composite_score * 100 * 0.4  # 40% weight on composite score
+    ))
+    
+    return is_upset, upset_probability, composite_score
 
 def generate_ml_prediction(home_team: str, away_team: str, game_date: str) -> Dict[str, Any]:
     """Generate prediction using Supabase ML Edge Function with real NFL data"""
@@ -235,22 +304,36 @@ def generate_fallback_prediction(home_team: str, away_team: str) -> Dict[str, An
     confidence_variance = (hash(f"{home_team}{away_team}") % 10) - 5
     confidence = max(55, min(85, base_confidence + confidence_variance))
     
-    # Calculate upset potential inversely related to confidence
-    upset_potential = max(15, min(45, 100 - confidence + (hash(f"{away_team}{home_team}") % 10)))
-    
     # Use the real model accuracy from our trained models
     model_accuracy = 61.4
+    
+    # Create mock team records for upset detection
+    home_record = {
+        'win_pct': (8 + (home_hash % 8)) / 17,  # Convert to win percentage
+        'wins': 8 + (home_hash % 8)
+    }
+    away_record = {
+        'win_pct': (8 + (away_hash % 8)) / 17,  # Convert to win percentage
+        'wins': 8 + (away_hash % 8)
+    }
+    
+    # Use integrated upset detection
+    is_upset, upset_probability, composite_score = detect_upset(
+        home_team, away_team, predicted_winner, confidence, 
+        home_record, away_record
+    )
     
     return {
         "predicted_winner": predicted_winner,
         "confidence": float(confidence),
         "win_probability": float(confidence),
-        "upset_potential": float(upset_potential),
-        "is_upset": confidence < 65,
+        "upset_potential": float(upset_probability),
+        "is_upset": is_upset,
         "model_accuracy": model_accuracy,
         "historical_matchups": 5 + (hash(f"{home_team}{away_team}") % 8),  # 5-12 historical games
         "home_record": f"{8 + (home_hash % 8)}-{8 - (home_hash % 8)}",  # Realistic records
-        "away_record": f"{8 + (away_hash % 8)}-{8 - (away_hash % 8)}"
+        "away_record": f"{8 + (away_hash % 8)}-{8 - (away_hash % 8)}",
+        "composite_upset_score": float(composite_score)
     }
 
 def format_time_12hr(time_str: str) -> str:
