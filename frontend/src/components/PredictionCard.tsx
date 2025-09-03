@@ -107,7 +107,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
         {/* Stats Section */}
         <div className="flex justify-center gap-4 lg:gap-6 mb-6 lg:mb-8">
           {/* Away Team */}
-          <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
+          <div className={`flex flex-col items-center gap-1 w-40 lg:w-48 px-0 py-2 ${game.ai_prediction.is_upset && game.ai_prediction.predicted_winner !== game.away_team ? 'bg-[#fffef3] border border-[#ffe08a] rounded-lg' : ''}`}>
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.away_team)}</p>
             <div className="flex items-center gap-2">
               <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.away_team)}</h4>
@@ -117,6 +117,11 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
             </div>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
+            {game.ai_prediction.predicted_winner === game.away_team ? (
+              <p className="text-blue-600 text-base text-center">Predict to Win</p>
+            ) : game.ai_prediction.is_upset ? (
+              <p className="text-[#ddb04f] text-base text-center">Could Pull the Upset</p>
+            ) : null}
             {userPick === game.away_team && (
               <div className="bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1 mt-2">
                 <span className="text-[#8c3e79] text-sm font-bold">MY PICK</span>
@@ -138,7 +143,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
           </div>
 
           {/* Home Team */}
-          <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
+          <div className={`flex flex-col items-center gap-1 w-40 lg:w-48 px-0 py-2 ${game.ai_prediction.is_upset && game.ai_prediction.predicted_winner !== game.home_team ? 'bg-[#fffef3] border border-[#ffe08a] rounded-lg' : ''}`}>
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.home_team)}</p>
             <div className="flex items-center gap-2">
               <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.home_team)}</h4>
@@ -148,6 +153,11 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
             </div>
             <p className="text-gray-600 text-base text-center">0-0</p>
             <p className="text-6xl font-bold text-gray-900 text-center tracking-tight leading-tight">00</p>
+            {game.ai_prediction.predicted_winner === game.home_team ? (
+              <p className="text-blue-600 text-base text-center">Predict to Win</p>
+            ) : game.ai_prediction.is_upset ? (
+              <p className="text-[#ddb04f] text-base text-center">Could Pull the Upset</p>
+            ) : null}
             {userPick === game.home_team && (
               <div className="bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1 mt-2">
                 <span className="text-[#8c3e79] text-sm font-bold">MY PICK</span>
