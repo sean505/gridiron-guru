@@ -91,24 +91,12 @@ export default function HomePage() {
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               AI-powered NFL predictions backed by comprehensive data analysis from the most reliable sources in football analytics.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-center">
               <Link
                 to="/predictor"
                 className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-colors shadow-lg hover:shadow-xl"
               >
-                View AI Predictions
-              </Link>
-              <Link
-                to="/predictor"
-                className="border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-blue-900 transition-colors"
-              >
-                Make Your Picks
-              </Link>
-              <Link
-                to="/previous-week"
-                className="bg-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl"
-              >
-                Previous Week Results
+                This Week's Predictions
               </Link>
             </div>
           </div>
