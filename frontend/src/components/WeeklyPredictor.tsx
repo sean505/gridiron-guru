@@ -426,46 +426,14 @@ export default function WeeklyPredictor() {
                 <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
                 AI Upset Picks
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 {games.filter(game => game.is_upset_pick).map((game, index) => (
                   <div
                     key={game.game_id || index}
-                    className="bg-red-50 border-2 border-red-300 rounded-lg p-4 cursor-pointer transition-all hover:shadow-lg"
+                    className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
                     onClick={() => handleGameSelect(game)}
                   >
-                    <div className="text-center">
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
-                      </h3>
-                      
-                      {/* Final Score (if available) */}
-                      {game.away_score !== undefined && game.home_score !== undefined && (
-                        <div className="mb-3 p-2 bg-white rounded border">
-                          <div className="text-lg font-bold text-gray-900">
-                            {game.away_score} - {game.home_score}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {game.away_score > game.home_score ? 
-                              `${getTeamName(game.away_team)} Wins` : 
-                              `${getTeamName(game.home_team)} Wins`
-                            }
-                            {game.overtime ? ' (OT)' : ''}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="text-red-600 font-bold mb-2">
-                        AI Pick: {getTeamName(game.ai_prediction.predicted_winner)}
-                      </div>
-                      <div className="flex justify-center space-x-3">
-                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                          {game.ai_prediction.confidence}%
-                        </span>
-                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                          {game.ai_prediction.upset_potential}%
-                        </span>
-                      </div>
-                    </div>
+                    <PredictionCard game={game} />
                   </div>
                 ))}
               </div>
