@@ -14,8 +14,8 @@ class OptimizedDataLoader:
     """Efficient data loader that loads data on-demand"""
     
     def __init__(self):
-        self.game_log_path = Path("api/data/game_log.json")
-        self.season_data_path = Path("api/data/season_data_by_team.json")
+        self.game_log_path = Path("data/game_log.json")
+        self.season_data_path = Path("data/season_data_by_team.json")
         self._game_log_cache = {}
         self._season_data_cache = {}
     
@@ -35,15 +35,47 @@ class OptimizedDataLoader:
             home_team_lower = home_team.lower()
             away_team_lower = away_team.lower()
             
+            # Map team abbreviations to actual abbreviations used in game log
+            team_abbrev_mapping = {
+                'kc': 'kan',
+                'buf': 'buf',
+                'sf': 'sfo',
+                'dal': 'dal',
+                'bal': 'rav',
+                'mia': 'mia',
+                'det': 'det',
+                'gb': 'gnb',
+                'hou': 'htx',
+                'ind': 'clt',
+                'jax': 'jax',
+                'lv': 'rai',
+                'lac': 'sdg',
+                'lar': 'ram',
+                'min': 'min',
+                'ne': 'nwe',
+                'no': 'nor',
+                'nyg': 'nyg',
+                'nyj': 'nyj',
+                'phi': 'phi',
+                'pit': 'pit',
+                'sea': 'sea',
+                'tb': 'tam',
+                'ten': 'oti',
+                'was': 'was'
+            }
+            
+            home_abbrev = team_abbrev_mapping.get(home_team_lower, home_team_lower)
+            away_abbrev = team_abbrev_mapping.get(away_team_lower, away_team_lower)
+            
             # Read file in chunks to avoid memory issues
             with open(self.game_log_path, 'r') as f:
                 data = json.load(f)
                 
             for game in data:
-                if ((game.get('homeTeamShort', '').lower() == home_team_lower and 
-                     game.get('awayTeamShort', '').lower() == away_team_lower) or
-                    (game.get('homeTeamShort', '').lower() == away_team_lower and 
-                     game.get('awayTeamShort', '').lower() == home_team_lower)):
+                if ((game.get('homeTeamShort', '').lower() == home_abbrev and 
+                     game.get('awayTeamShort', '').lower() == away_abbrev) or
+                    (game.get('homeTeamShort', '').lower() == away_abbrev and 
+                     game.get('awayTeamShort', '').lower() == home_abbrev)):
                     matchups.append(game)
             
             # Cache the result
@@ -76,9 +108,56 @@ class OptimizedDataLoader:
             with open(self.season_data_path, 'r') as f:
                 data = json.load(f)
                 
+            # Map team abbreviations to full names (using actual abbreviations from game log)
+            team_name_mapping = {
+                'kc': 'kansas city chiefs',
+                'kan': 'kansas city chiefs',
+                'buf': 'buffalo bills',
+                'sf': 'san francisco 49ers',
+                'sfo': 'san francisco 49ers',
+                'dal': 'dallas cowboys',
+                'bal': 'baltimore ravens',
+                'rav': 'baltimore ravens',
+                'mia': 'miami dolphins',
+                'det': 'detroit lions',
+                'gb': 'green bay packers',
+                'gnb': 'green bay packers',
+                'hou': 'houston texans',
+                'htx': 'houston texans',
+                'ind': 'indianapolis colts',
+                'clt': 'indianapolis colts',
+                'jax': 'jacksonville jaguars',
+                'jax': 'jacksonville jaguars',
+                'lv': 'las vegas raiders',
+                'rai': 'las vegas raiders',
+                'lac': 'los angeles chargers',
+                'sdg': 'los angeles chargers',
+                'lar': 'los angeles rams',
+                'ram': 'los angeles rams',
+                'min': 'minnesota vikings',
+                'ne': 'new england patriots',
+                'nwe': 'new england patriots',
+                'no': 'new orleans saints',
+                'nor': 'new orleans saints',
+                'nyg': 'new york giants',
+                'nyj': 'new york jets',
+                'phi': 'philadelphia eagles',
+                'pit': 'pittsburgh steelers',
+                'sea': 'seattle seahawks',
+                'sea': 'seattle seahawks',
+                'tb': 'tampa bay buccaneers',
+                'tam': 'tampa bay buccaneers',
+                'ten': 'tennessee titans',
+                'oti': 'tennessee titans',
+                'was': 'washington commanders',
+                'was': 'washington commanders'
+            }
+            
+            full_team_name = team_name_mapping.get(team_lower, team_lower)
+            
             for record in data:
                 if (record.get('Season') == season and 
-                    record.get('Team', '').lower().find(team_lower) != -1):
+                    record.get('Team', '').lower().find(full_team_name) != -1):
                     games_played += 1
                     points_for += int(record.get('Tm', 0))
                     points_against += int(record.get('Opp', 0))

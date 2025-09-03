@@ -825,6 +825,49 @@ async def get_standings():
         "data": []
     }
 
+@app.get("/api/team-stats/{team}")
+async def get_team_stats(team: str):
+    """Get team statistics from 2008-2024 historical data"""
+    try:
+        from data_loader import OptimizedDataLoader
+        
+        data_loader = OptimizedDataLoader()
+        team_record = data_loader.get_team_record(team, 2024)  # Get latest season data
+        
+        return {
+            "team": team,
+            "wins": team_record.get("wins", 0),
+            "losses": team_record.get("losses", 0),
+            "win_pct": team_record.get("win_pct", 0.0),
+            "points_for": team_record.get("points_for", 0),
+            "points_against": team_record.get("points_against", 0),
+            "games_played": team_record.get("games_played", 0)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching team stats for {team}: {e}")
+        return {"error": "Failed to fetch team stats", "status": "error"}
+
+@app.get("/api/historical-matchups/{home_team}/{away_team}")
+async def get_historical_matchups(home_team: str, away_team: str):
+    """Get historical matchups between two teams from 2008-2024 data"""
+    try:
+        from data_loader import OptimizedDataLoader
+        
+        data_loader = OptimizedDataLoader()
+        matchups = data_loader.get_historical_matchups(home_team, away_team)
+        
+        return {
+            "home_team": home_team,
+            "away_team": away_team,
+            "matchup_count": len(matchups),
+            "matchups": matchups[:10]  # Return first 10 matchups for efficiency
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching historical matchups for {home_team} vs {away_team}: {e}")
+        return {"error": "Failed to fetch historical matchups", "status": "error"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
