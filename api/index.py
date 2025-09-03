@@ -9,8 +9,8 @@ import requests
 import json
 from datetime import datetime, timedelta
 import httpx
-import joblib
-import numpy as np
+# import joblib  # Disabled for Vercel deployment
+# import numpy as np  # Disabled for Vercel deployment
 from pathlib import Path
 
 # Import optimized data loader - disabled for Vercel deployment
@@ -29,36 +29,12 @@ feature_scaler = None
 model_metadata = None
 
 def load_ml_models():
-    """Load the trained ML models"""
+    """Load the trained ML models - disabled for Vercel deployment"""
     global ensemble_model, feature_scaler, model_metadata
     
-    try:
-        model_dir = Path("api/prediction_engine/models/trained")
-        
-        # Load ensemble model
-        ensemble_path = model_dir / "ensemble.joblib"
-        if ensemble_path.exists():
-            ensemble_model = joblib.load(ensemble_path)
-            logger.info("Loaded ensemble model")
-        
-        # Load feature scaler
-        scaler_path = model_dir / "feature_scaler.joblib"
-        if scaler_path.exists():
-            feature_scaler = joblib.load(scaler_path)
-            logger.info("Loaded feature scaler")
-        
-        # Load model metadata
-        metadata_path = model_dir / "model_metadata.json"
-        if metadata_path.exists():
-            with open(metadata_path, 'r') as f:
-                model_metadata = json.load(f)
-            logger.info("Loaded model metadata")
-        
-        return ensemble_model is not None and feature_scaler is not None
-        
-    except Exception as e:
-        logger.error(f"Error loading ML models: {e}")
-        return False
+    # ML models disabled for Vercel deployment
+    logger.info("ML models disabled for Vercel deployment - using fallback predictions")
+    return False
 
 def get_current_season():
     """Get current NFL season - 2025"""
