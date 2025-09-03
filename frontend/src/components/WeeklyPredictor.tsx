@@ -47,6 +47,7 @@ export default function WeeklyPredictor() {
   const [userPrediction, setUserPrediction] = useState('');
   const [confidence, setConfidence] = useState(5);
   const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'upsets'>('all');
 
   const [weekInfo, setWeekInfo] = useState<{season: number, week: number, total_games: number} | null>(null);
 
@@ -420,47 +421,46 @@ export default function WeeklyPredictor() {
           </div>
         </div>
 
-        {/* Upset Picks Section */}
-        {games.filter(g => g.is_upset_pick).length > 0 && (
-          <div className="space-y-4">
-            {/* AI Upset Picks */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-                AI Upset Picks
-              </h2>
-              <div className="space-y-6">
-                {games.filter(game => game.is_upset_pick).map((game, index) => (
-                  <div
-                    key={game.game_id || index}
-                    className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
-                    onClick={() => handleGameSelect(game)}
-                  >
-                    <PredictionCard game={game} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* All Games Grid */}
+        {/* Filter Toggle and Games Grid */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-            <BarChart3 className="w-6 h-6 mr-2 text-blue-500" />
-            All Games This Week
-          </h2>
+          {/* Filter Toggle Buttons */}
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={() => setFilterType('all')}
+              className={`flex items-center px-6 py-3 rounded-lg font-semibold transition-all ${
+                filterType === 'all'
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5 mr-2" />
+              All Games This Week
+            </button>
+            <button
+              onClick={() => setFilterType('upsets')}
+              className={`flex items-center px-6 py-3 rounded-lg font-semibold transition-all ${
+                filterType === 'upsets'
+                  ? 'bg-orange-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              AI Upset Picks
+            </button>
+          </div>
           {/* Game Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {games.map((game, index) => (
-              <div
-                key={game.game_id || index}
-                className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
-                onClick={() => handleGameSelect(game)}
-              >
-                <PredictionCard game={game} />
-              </div>
-            ))}
+            {games
+              .filter(game => filterType === 'all' || game.is_upset_pick)
+              .map((game, index) => (
+                <div
+                  key={game.game_id || index}
+                  className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
+                  onClick={() => handleGameSelect(game)}
+                >
+                  <PredictionCard game={game} />
+                </div>
+              ))}
           </div>
         </div>
       </div>
