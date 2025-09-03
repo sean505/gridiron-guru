@@ -48,6 +48,7 @@ export default function WeeklyPredictor() {
   const [confidence, setConfidence] = useState(5);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'upsets'>('all');
+  const [userPicks, setUserPicks] = useState<{[gameId: string]: string}>({});
 
   const [weekInfo, setWeekInfo] = useState<{season: number, week: number, total_games: number} | null>(null);
 
@@ -197,6 +198,13 @@ export default function WeeklyPredictor() {
     // Simulate API call delay
     setTimeout(() => {
       setLoading(false);
+      
+      // Store the user pick for this game
+      setUserPicks(prev => ({
+        ...prev,
+        [selectedGame.game_id]: userPrediction
+      }));
+      
       // Here you would normally send the prediction to your backend
       console.log('Prediction submitted:', {
         game: selectedGame,
@@ -458,7 +466,7 @@ export default function WeeklyPredictor() {
                   className="cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl"
                   onClick={() => handleGameSelect(game)}
                 >
-                  <PredictionCard game={game} />
+                  <PredictionCard game={game} userPick={userPicks[game.game_id]} />
                 </div>
               ))}
           </div>

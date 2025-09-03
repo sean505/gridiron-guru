@@ -103,7 +103,13 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
       </div>
 
       {/* Main Card */}
-      <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-4 lg:p-6">
+      <div className="bg-white border border-t-0 border-gray-200 rounded-b-xl shadow-sm p-4 lg:p-6 relative">
+        {/* MY PICK Badge - Top Right */}
+        {userPick && (
+          <div className="absolute top-4 right-4 bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1">
+            <span className="text-[#8c3e79] text-sm font-bold">MY PICK</span>
+          </div>
+        )}
         {/* Stats Section */}
         <div className="flex justify-center gap-4 lg:gap-6 mb-6 lg:mb-8">
           {/* Away Team */}
@@ -134,13 +140,6 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
 
           {/* Home Team */}
           <div className="flex flex-col items-center gap-1 w-40 lg:w-48">
-            {userPick && (
-              <div className="bg-green-100 border border-green-300 rounded-xl px-2 py-1 flex items-center gap-2 mb-2">
-                <span className="text-green-700 text-sm font-normal">YOUR PICK</span>
-                <div className="w-px h-3 bg-green-300"></div>
-                <span className="text-green-700 text-sm font-extrabold">{userPick}</span>
-              </div>
-            )}
             <p className="text-gray-600 text-base text-center">{getTeamCity(game.home_team)}</p>
             <div className="flex items-center gap-2">
               <h4 className="text-2xl font-bold text-gray-900 text-center tracking-tight">{getTeamNickname(game.home_team)}</h4>
