@@ -123,7 +123,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
             {game.ai_prediction.predicted_winner === game.away_team ? (
               <p className="text-blue-600 text-base text-center">Predict to Win</p>
             ) : game.ai_prediction.is_upset ? (
-              <p className="text-[#ddb04f] text-base text-center">Could Pull the Upset</p>
+              <p className="text-[#ddb04f] text-base text-center">Upset Threat!</p>
             ) : null}
             {userPick === game.away_team && (
               <div className="bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1 mt-2">
@@ -159,7 +159,7 @@ const PredictionCard: React.FC<PredictionCardProps> = ({ game, userPick }) => {
             {game.ai_prediction.predicted_winner === game.home_team ? (
               <p className="text-blue-600 text-base text-center">Predict to Win</p>
             ) : game.ai_prediction.is_upset ? (
-              <p className="text-[#ddb04f] text-base text-center">Could Pull the Upset</p>
+              <p className="text-[#ddb04f] text-base text-center">Upset Threat!</p>
             ) : null}
             {userPick === game.home_team && (
               <div className="bg-[#fbe1f7] border border-[#fcb2f4] rounded-xl px-2 py-1 mt-2">
