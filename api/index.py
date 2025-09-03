@@ -757,6 +757,59 @@ async def get_previous_week_games(season: int = 2024, week: int = 18):
         logger.error(f"Error in get_previous_week_games: {e}")
         return {"games": [], "season": season, "week": week, "total_games": 0, "prediction_accuracy": 0}
 
+@app.post("/api/user-predictions")
+async def save_user_prediction(prediction_data: dict):
+    """Save a user's prediction for a game"""
+    try:
+        game_id = prediction_data.get("game_id")
+        user_prediction = prediction_data.get("user_prediction")
+        confidence = prediction_data.get("confidence")
+        season = prediction_data.get("season")
+        week = prediction_data.get("week")
+        
+        if not all([game_id, user_prediction, confidence, season, week]):
+            return {"error": "Missing required fields", "status": "error"}
+        
+        # For now, we'll just log the prediction and return success
+        # In a real app, you'd save this to a database
+        logger.info(f"User prediction saved: Game {game_id}, Pick: {user_prediction}, Confidence: {confidence}")
+        
+        return {
+            "status": "success",
+            "message": "Prediction saved successfully",
+            "data": {
+                "game_id": game_id,
+                "user_prediction": user_prediction,
+                "confidence": confidence,
+                "season": season,
+                "week": week,
+                "saved_at": "2025-01-27T00:00:00Z"  # Mock timestamp
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error saving user prediction: {e}")
+        return {"error": "Failed to save prediction", "status": "error"}
+
+@app.get("/api/user-predictions")
+async def get_user_predictions(season: int = None, week: int = None):
+    """Get user's saved predictions for a season/week"""
+    try:
+        # For now, return empty predictions
+        # In a real app, you'd fetch from database
+        logger.info(f"Fetching user predictions for season {season}, week {week}")
+        
+        return {
+            "status": "success",
+            "predictions": [],
+            "season": season,
+            "week": week
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching user predictions: {e}")
+        return {"error": "Failed to fetch predictions", "status": "error"}
+
 @app.get("/api/standings")
 async def get_standings():
     """Get current NFL standings"""

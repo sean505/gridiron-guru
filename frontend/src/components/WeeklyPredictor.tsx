@@ -56,6 +56,24 @@ export default function WeeklyPredictor() {
     loadCurrentWeekGames();
   }, []);
 
+  const loadUserPredictions = async (season: number, week: number) => {
+    try {
+      const response = await fetch(`/api/user-predictions?season=${season}&week=${week}`);
+      const result = await response.json();
+      
+      if (result.status === 'success' && result.predictions) {
+        // Convert predictions array to userPicks object
+        const predictionsMap: {[gameId: string]: string} = {};
+        result.predictions.forEach((pred: any) => {
+          predictionsMap[pred.game_id] = pred.user_prediction;
+        });
+        setUserPicks(predictionsMap);
+      }
+    } catch (error) {
+      console.error('Error loading user predictions:', error);
+    }
+  };
+
   const loadCurrentWeekGames = async () => {
     try {
       setLoading(true);
@@ -99,6 +117,9 @@ export default function WeeklyPredictor() {
         week: gamesData.week,
         total_games: gamesData.total_games
       });
+      
+      // Load user predictions for this week
+      loadUserPredictions(gamesData.season, gamesData.week);
     } catch (error) {
       console.error('Error loading current week games:', error);
       // Set fallback data on error
@@ -151,6 +172,9 @@ export default function WeeklyPredictor() {
         week: gamesData.week,
         total_games: gamesData.total_games
       });
+      
+      // Load user predictions for this week
+      loadUserPredictions(gamesData.season, gamesData.week);
     } catch (error) {
       console.error('Error loading upcoming week games:', error);
       // Set fallback data on error
@@ -195,23 +219,47 @@ export default function WeeklyPredictor() {
     
     setLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      setLoading(false);
-      
-      // Store the user pick for this game
-      setUserPicks(prev => ({
-        ...prev,
-        [selectedGame.game_id]: userPrediction
-      }));
-      
-      // Here you would normally send the prediction to your backend
-      console.log('Prediction submitted:', {
-        game: selectedGame,
-        user_prediction: userPrediction,
-        confidence
+    try {
+      // Call the API to save the user prediction
+      const response = await fetch('/api/user-predictions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          game_id: selectedGame.game_id,
+          user_prediction: userPrediction,
+          confidence: confidence,
+          season: selectedGame.season,
+          week: selectedGame.week
+        })
       });
-    }, 2000);
+      
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        // Store the user pick for this game in local state
+        setUserPicks(prev => ({
+          ...prev,
+          [selectedGame.game_id]: userPrediction
+        }));
+        
+        // Show success message (you could add a toast notification here)
+        alert('Prediction saved successfully!');
+        
+        // Reset the form
+        setUserPrediction('');
+        setConfidence(5);
+        setSelectedGame(null);
+      } else {
+        alert('Failed to save prediction. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving prediction:', error);
+      alert('Failed to save prediction. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getTeamName = (teamCode: string) => {
