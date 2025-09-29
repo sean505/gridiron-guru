@@ -112,6 +112,8 @@ class GamePrediction(BaseModel):
     game_id: str = Field(..., description="Unique game identifier")
     home_team: str = Field(..., description="Home team abbreviation")
     away_team: str = Field(..., description="Away team abbreviation")
+    season: int = Field(..., description="NFL season year")
+    week: int = Field(..., description="Week number")
     
     # Prediction results
     predicted_winner: str = Field(..., description="Predicted winning team abbreviation")
@@ -134,7 +136,7 @@ class GamePrediction(BaseModel):
     explanation: str = Field(..., description="Human-readable explanation of prediction")
     
     # Model metadata
-    model_version: str = Field(default="1.0.0", description="Prediction model version")
+    prediction_model_version: str = Field(default="1.0.0", description="Prediction model version")
     prediction_timestamp: datetime = Field(default_factory=datetime.now, description="When prediction was made")
     data_freshness: datetime = Field(..., description="When underlying data was last updated")
     
@@ -148,6 +150,7 @@ class GamePrediction(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+        protected_namespaces = ()
 
 
 class WeeklyPredictions(BaseModel):
@@ -190,7 +193,7 @@ class PredictionRequest(BaseModel):
     
     class Config:
         """Pydantic configuration."""
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "season": 2024,
                 "week": 18,
@@ -210,7 +213,7 @@ class PredictionResponse(BaseModel):
     
     class Config:
         """Pydantic configuration."""
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "success": True,
                 "predictions": {

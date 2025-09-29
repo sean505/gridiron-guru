@@ -42,7 +42,7 @@ class PredictionEngine:
     - Historical performance tracking
     """
     
-    def __init__(self, model_dir: str = "api/prediction_engine/models"):
+    def __init__(self, model_dir: str = "prediction_engine/models/trained"):
         """Initialize the prediction engine."""
         self.model_dir = Path(model_dir)
         self.model_dir.mkdir(exist_ok=True)
@@ -436,7 +436,7 @@ class PredictionEngine:
                 upset_factors=upset_factors,
                 key_factors=self._extract_key_factors(features),
                 explanation=explanation,
-                model_version=self.model_version,
+                prediction_model_version=self.model_version,
                 data_freshness=datetime.now()
             )
             
@@ -741,7 +741,7 @@ class PredictionEngine:
                 upset_factors=[],
                 key_factors=["Home field advantage"],
                 explanation="Fallback prediction based on home field advantage.",
-                model_version="fallback",
+                prediction_model_version="fallback",
                 data_freshness=datetime.now()
             )
             
@@ -764,7 +764,7 @@ class PredictionEngine:
                 upset_factors=[],
                 key_factors=["Default prediction"],
                 explanation="Default prediction due to system limitations.",
-                model_version="default",
+                prediction_model_version="default",
                 data_freshness=datetime.now()
             )
     
@@ -792,12 +792,12 @@ class PredictionEngine:
         """Load trained models from disk."""
         try:
             model_files = {
-                'logistic_model': 'logistic_model.pkl',
-                'random_forest_model': 'random_forest_model.pkl',
-                'xgboost_model': 'xgboost_model.pkl',
-                'scaler': 'scaler.pkl',
-                'ensemble_weights': 'ensemble_weights.pkl',
-                'feature_names': 'feature_names.pkl'
+                'logistic_model': 'logistic_regression.joblib',
+                'random_forest_model': 'random_forest.joblib',
+                'xgboost_model': 'xgboost.joblib',
+                'scaler': 'feature_scaler.joblib',
+                'ensemble_weights': 'ensemble.joblib',
+                'feature_names': 'feature_names.pkl'  # This might not exist, we'll handle it
             }
             
             for attr_name, filename in model_files.items():
@@ -805,8 +805,13 @@ class PredictionEngine:
                 if file_path.exists():
                     setattr(self, attr_name, joblib.load(file_path))
                 else:
-                    logger.warning(f"Model file not found: {filename}")
-                    return False
+                    if attr_name == 'feature_names':
+                        # Feature names file is optional, create default
+                        self.feature_names = [f"feature_{i}" for i in range(28)]  # Default 28 features
+                        logger.info("Using default feature names")
+                    else:
+                        logger.warning(f"Model file not found: {filename}")
+                        return False
             
             logger.info("Models loaded successfully")
             return True

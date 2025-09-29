@@ -39,7 +39,7 @@ class DataCollector:
     3. season_data_by_team.json - Season-level team aggregates (2008-2024)
     """
     
-    def __init__(self, data_dir: str = "api/data"):
+    def __init__(self, data_dir: str = "data"):
         """Initialize the data collector with data directory."""
         self.data_dir = Path(data_dir)
         self.cache_dir = self.data_dir / "cache"
@@ -49,8 +49,8 @@ class DataCollector:
         self.cache_duration = timedelta(hours=6)  # Cache for 6 hours
         
         # Data sources
-        self.game_log_file = self.data_dir / "game_log.json"
-        self.season_data_file = self.data_dir / "season_data_by_team.json"
+        self.game_log_file = self.data_dir / "game_log_fixed.json"
+        self.season_data_file = self.data_dir / "season_data_by_team_fixed.json"
         
         # In-memory cache
         self._game_log_cache: Optional[Dict] = None
@@ -136,6 +136,12 @@ class DataCollector:
             elif data_type == "play_by_play":
                 seasons = kwargs.get('seasons', [datetime.now().year])
                 data = nfl.import_pbp_data(seasons)
+            elif data_type == "pbp":
+                seasons = kwargs.get('seasons', [datetime.now().year])
+                data = nfl.import_pbp_data(seasons)
+            elif data_type == "team_desc":
+                seasons = kwargs.get('seasons', [datetime.now().year])
+                data = nfl.import_team_desc(seasons)
             else:
                 logger.error(f"Unknown data type: {data_type}")
                 return pd.DataFrame()

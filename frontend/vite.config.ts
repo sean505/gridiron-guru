@@ -6,12 +6,19 @@ export default defineConfig({
   plugins: [react()],
   base: "/",
   server: {
-    port: 5173,
+    port: 3000,
     host: true,
   },
   build: {
     outDir: "dist",
     chunkSizeWarningLimit: 5000,
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-[hash].js`,
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`
+      }
+    }
   },
   resolve: {
     alias: {

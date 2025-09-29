@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy, TrendingUp, Database, Brain, Users, ArrowRight, Target, AlertTriangle } from 'lucide-react';
 import { nflApi } from '../api/nflApi';
+import HomeHeader from '../components/HomeHeader';
+import { categorizeUpset, getUpsetPotentialColor } from '../utils/upsetUtils';
 
 export default function HomePage() {
   const [featuredPredictions, setFeaturedPredictions] = useState([]);
@@ -78,30 +80,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-20">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <Trophy className="w-20 h-20 text-yellow-400" />
-            </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Gridiron Guru
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
-              AI-powered NFL predictions backed by comprehensive data analysis from the most reliable sources in football analytics.
-            </p>
-            <div className="flex justify-center">
-              <Link
-                to="/predictor"
-                className="bg-yellow-500 text-blue-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-colors shadow-lg hover:shadow-xl"
-              >
-                This Week's Predictions
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Home Header */}
+      <HomeHeader />
 
       {/* Featured AI Predictions */}
       <div className="max-w-7xl mx-auto px-6 py-16">

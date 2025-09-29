@@ -1,250 +1,177 @@
-# Gridiron Guru 🏈
+# Gridiron Guru - NFL Prediction Platform
 
-The ultimate NFL prediction platform powered by artificial intelligence and comprehensive data analysis. Make smarter picks, understand the game deeper, and dominate your fantasy leagues.
+A comprehensive NFL prediction platform that combines machine learning models with a modern web interface to provide accurate game predictions, team analysis, and user engagement features.
 
-## 🚀 Features
+## 🏈 Features
 
-- **AI-Powered Predictions**: Get intelligent game predictions backed by comprehensive NFL data analysis
-- **Rich NFL Data**: Access detailed team statistics, player performance, and historical game data
-- **Advanced Analytics**: Deep dive into team performance metrics and trend analysis
-- **Weekly Predictions**: Make predictions for every game with confidence scoring
-- **Real-time Updates**: Stay current with live game data and performance statistics
+- **Real AI Predictions**: Machine learning models with 61.4% accuracy
+- **Live Data**: Real-time NFL data from ESPN API
+- **2025 Season**: Complete coverage of all 272 games across 18 weeks
+- **Interactive Interface**: Modern React frontend with responsive design
+- **Team Analysis**: Detailed team statistics and historical matchups
+- **Upset Detection**: Identifies potential upsets with confidence scoring
 
-## 🏗️ Architecture
-
-This project has been completely rebuilt with a modern, scalable architecture:
-
-- **Frontend**: React 19 + TypeScript + Tailwind CSS
-- **Backend**: Python FastAPI with nfl_data_py integration
-- **Deployment**: Vercel (Frontend + API Functions)
-- **Data Sources**: nflfastR, nfldata, DynastyProcess, Draft Scout
-
-## 📁 Project Structure
-
-```
-Gridiron Guru/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── pages/          # Page components
-│   │   ├── api/            # API service layer
-│   │   └── App.tsx         # Main app component
-│   ├── package.json        # Frontend dependencies
-│   └── vite.config.ts      # Vite configuration
-├── api/                     # Python FastAPI backend
-│   ├── main.py             # Main FastAPI application
-│   ├── requirements.txt    # Python dependencies
-│   └── env.example         # Environment variables template
-├── vercel.json             # Vercel deployment configuration
-└── README.md               # This file
-```
-
-## 🛠️ Setup Instructions
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
 - Python 3.9+
-- Vercel CLI
-- OpenAI API key
+- Node.js 18+
+- npm or yarn
 
-### 1. Install Dependencies
+### Installation
 
-#### Frontend
-```bash
-cd frontend
-npm install
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/gridiron-guru.git
+   cd gridiron-guru
+   ```
 
-#### Backend
+2. **Backend Setup**
+   ```bash
+   # Create virtual environment
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   
+   # Install dependencies
+   cd api
+   pip install -r requirements.txt
+   
+   # Start the backend server
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+3. **Frontend Setup**
+   ```bash
+   # In a new terminal
+   cd frontend
+   npm install
+   
+   # Start the frontend server
+   npm run dev
+   ```
+
+4. **Access the Application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+
+## 🏗️ Architecture
+
+### Backend (FastAPI)
+- **Location**: `/api/`
+- **Main File**: `main.py`
+- **Port**: 8000
+- **ML Models**: Trained ensemble models (Logistic Regression, Random Forest, XGBoost)
+- **Data Source**: nfl_data_py library for NFL statistics
+
+### Frontend (React + TypeScript)
+- **Location**: `/frontend/`
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Port**: 3000
+- **Styling**: Tailwind CSS
+
+### Prediction Engine
+- **Location**: `/api/prediction_engine/`
+- **Trained Models**: 
+  - `ensemble.joblib` - VotingClassifier ensemble
+  - `feature_scaler.joblib` - StandardScaler for features
+  - Individual model files (.joblib)
+- **Training Data**: 2008-2024 NFL seasons
+- **Model Accuracy**: 61.4% validation accuracy
+
+## 📊 API Endpoints
+
+- `GET /api/games` - Fetch games with AI predictions
+- `GET /api/health` - Health check
+- `GET /api/team-stats/{team}` - Team statistics
+- `GET /api/historical-matchups/{home}/{away}` - Historical data
+
+## 🔧 Development
+
+### Backend Development
 ```bash
 cd api
-pip install -r requirements.txt
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 2. Environment Configuration
-
-#### Backend Environment
-```bash
-cd api
-cp env.example .env
-```
-
-Edit `.env` and add your OpenAI API key:
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-CURRENT_SEASON=2024
-```
-
-#### Frontend Environment
-```bash
-cd frontend
-```
-
-Create `.env.local`:
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-### 3. Local Development
-
-#### Start Backend
-```bash
-cd api
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### Start Frontend
+### Frontend Development
 ```bash
 cd frontend
 npm run dev
 ```
 
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-### 4. Vercel Deployment
-
-#### Install Vercel CLI
-```bash
-npm i -g vercel
-```
-
-#### Deploy to Vercel
-```bash
-vercel
-```
-
-Follow the prompts to:
-1. Link to your Vercel account
-2. Set up the project
-3. Configure environment variables
-
-#### Environment Variables in Vercel
-Set these in your Vercel dashboard:
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `CURRENT_SEASON`: Current NFL season (e.g., 2024)
-
-## 🔌 API Endpoints
-
-### Core Endpoints
-- `GET /` - API information
-- `GET /health` - Health check
-- `GET /api/teams` - Get all NFL teams
-- `GET /api/teams/{team}/stats` - Get team statistics
-- `GET /api/games` - Get games for season/week
-- `GET /api/players` - Get player statistics
-- `GET /api/standings` - Get current standings
-- `POST /api/predict` - Generate AI prediction
-
-### Data Sources
-The API integrates with multiple NFL data sources:
-- **nflfastR**: Play-by-play data and advanced metrics
-- **nfldata**: Comprehensive team and player statistics
-- **DynastyProcess**: Fantasy football insights
-- **Draft Scout**: Draft analysis and combine data
-
-## 🎯 Key Features
-
-### AI Predictions
-- User submits game prediction with confidence level
-- AI analyzes historical data, team stats, and trends
-- Returns detailed prediction with reasoning
-- Confidence scoring and performance tracking
-
-### Data Integration
-- Real-time NFL data from multiple sources
-- Historical performance analysis
-- Team and player statistics
-- Game schedules and results
-
-### User Experience
-- Modern, responsive design
-- Interactive game selection
-- Confidence scoring system
-- Detailed AI analysis display
-
-## 🚀 Development
-
-### Adding New Features
-1. **Backend**: Add new endpoints in `api/main.py`
-2. **Frontend**: Create components in `frontend/src/components/`
-3. **API Integration**: Update `frontend/src/api/nflApi.ts`
-4. **Types**: Update interfaces as needed
-
-### Code Style
-- **Python**: Follow PEP 8 standards
-- **TypeScript**: Use strict mode and proper typing
-- **React**: Functional components with hooks
-- **CSS**: Tailwind CSS utility classes
-
-## 📊 Performance
-
-- **FastAPI**: High-performance Python web framework
-- **Vercel**: Edge functions with global CDN
-- **React 19**: Latest React with performance improvements
-- **Optimized**: Lazy loading and efficient data fetching
-
-## 🔒 Security
-
-- CORS configuration for production
-- Environment variable management
-- Input validation with Pydantic
-- Rate limiting (can be added)
-
-## 🧪 Testing
-
-### Backend Testing
+### Testing Predictions
 ```bash
 cd api
-pytest
+python -c "from main import generate_ai_prediction; print(generate_ai_prediction('PHI', 'DAL', 1))"
 ```
 
-### Frontend Testing
-```bash
-cd frontend
-npm test
+## 📁 Project Structure
+
+```
+Gridiron Guru/
+├── api/                          # FastAPI backend
+│   ├── main.py                   # Main application
+│   ├── prediction_engine/        # ML models and prediction logic
+│   │   ├── models/trained/       # Trained model files (.joblib)
+│   │   ├── prediction_engine.py  # Core prediction logic
+│   │   └── feature_engineering.py # Feature creation
+│   ├── temporal_pipeline/        # Temporal data processing
+│   └── data/                     # NFL data cache (Parquet format)
+├── frontend/                     # React frontend
+│   ├── src/
+│   │   ├── components/           # React components
+│   │   ├── pages/                # Page components
+│   │   └── api/                  # API client code
+│   └── dist/                     # Built frontend
+└── README.md
 ```
 
-## 📈 Monitoring
+## 🤖 Machine Learning
 
-- Vercel analytics and performance monitoring
-- API health checks
-- Error logging and monitoring
-- Performance metrics
+The platform uses a trained ensemble model combining:
+- **Logistic Regression**: Linear baseline model
+- **Random Forest**: Tree-based ensemble
+- **XGBoost**: Gradient boosting
+
+**Features**: 28 engineered features per game including:
+- Team performance metrics
+- Historical head-to-head data
+- Home field advantage
+- Recent form analysis
+
+## 📈 Model Performance
+
+- **Training Data**: 2008-2024 NFL seasons
+- **Validation Accuracy**: 61.4%
+- **Feature Count**: 28 features per game
+- **Prediction Types**: Win probability, score prediction, upset detection
+
+## 🚀 Deployment
+
+### Vercel (Frontend)
+The frontend is configured for deployment on Vercel with automatic builds.
+
+### Backend Deployment
+The backend can be deployed to any Python hosting service that supports FastAPI.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 License
+## 📞 Support
 
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For support and questions:
-- Create an issue in the repository
-- Check the API documentation at `/docs`
-- Review the Vercel deployment logs
-
-## 🔄 Updates
-
-### Recent Changes
-- ✅ Complete backend rebuild with Python FastAPI
-- ✅ nfl_data_py integration for rich NFL data
-- ✅ Vercel deployment configuration
-- ✅ Enhanced React frontend with TypeScript
-- ✅ AI-powered prediction system
-- ✅ Modern UI/UX with Tailwind CSS
+For support, email your-email@example.com or create an issue in the repository.
 
 ---
 
-**Gridiron Guru** - The future of NFL predictions is here. Powered by AI, backed by data. 🏈✨
-# Force Vercel deployment - Tue Sep  2 12:33:15 PDT 2025
+**Gridiron Guru** - Where AI meets NFL predictions! 🏈

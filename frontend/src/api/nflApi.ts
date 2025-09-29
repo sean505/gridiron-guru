@@ -1,16 +1,35 @@
 import axios from 'axios';
+import { getApiUrl } from '../utils/simpleApiConfig';
 
-// API base URL - will be different for local dev vs production
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'https://gridiron-guru.vercel.app';
+// Create axios instance with simple API URL detection
+const createApiInstance = () => {
+  const baseURL = getApiUrl();
+  console.log('🔄 Creating new API instance with baseURL:', baseURL);
+  
+  return axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
 
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
+// Create initial instance
+let api = createApiInstance();
+
+// Add request interceptor for debugging
+api.interceptors.request.use(
+  (config) => {
+    console.log('🚀 Making API request to:', config.baseURL + config.url);
+    console.log('🔧 Full URL:', config.baseURL + config.url);
+    return config;
   },
-});
+  (error) => {
+    console.error('❌ Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
 
 // API response types
 export interface Team {
@@ -83,7 +102,8 @@ export interface PredictionResponse {
 export const nflApi = {
   // Teams
   getTeams: async (): Promise<Team[]> => {
-    const response = await api.get('/api/teams');
+    const apiInstance = createApiInstance();
+    const response = await apiInstance.get('/api/teams');
     return response.data.teams;
   },
 
@@ -95,15 +115,25 @@ export const nflApi = {
 
   // Games
   getGames: async (season?: number, week?: number): Promise<{games: Game[], season: number, week: number, total_games: number, is_upcoming_week?: boolean}> => {
+    const apiInstance = createApiInstance();
     const params: any = {};
     if (season) params.season = season;
     if (week) params.week = week;
-    const response = await api.get('/api/games', { params });
+    const response = await apiInstance.get('/api/games', { params });
     return response.data;
   },
 
   getUpcomingGames: async (): Promise<{games: Game[], season: number, week: number, total_games: number, is_upcoming_week: boolean, message: string}> => {
     const response = await api.get('/api/games/upcoming');
+    return response.data;
+  },
+
+  getPreviousGames: async (season?: number, week?: number): Promise<{games: Game[], season: number, week: number, total_games: number, prediction_accuracy?: {correct: number, total: number, percentage: number}, is_previous_week: boolean, message: string}> => {
+    const apiInstance = createApiInstance();
+    const params: any = {};
+    if (season) params.season = season;
+    if (week) params.week = week;
+    const response = await apiInstance.get('/api/games/previous', { params });
     return response.data;
   },
 

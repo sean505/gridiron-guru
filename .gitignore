@@ -206,3 +206,16 @@ venv.bak/
 .dmypy.json
 dmypy.json
 .vercel
+
+# Project specific
+*.db
+*.sqlite
+*.sqlite3
+api/data/cache/
+api/prediction_engine/cache/
+frontend/dist/
+frontend/build/
+
+# Jupyter notebooks (keep the main one)
+*.ipynb
+!Gridiron_Guru_Colab_Notebook.ipynb

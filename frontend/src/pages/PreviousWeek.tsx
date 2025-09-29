@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { ArrowLeft, Trophy, Target, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, BarChart3, Calendar, Clock, Users } from 'lucide-react';
+import PredictionCard from '../components/PredictionCard';
+import Header from '../components/Header';
+import { getApiUrl } from '../utils/simpleApiConfig';
+import { getCurrentNFLWeek, getWeekForSection, getWeekDisplayName } from '../utils/weekUtils';
 
 interface GameResult {
   game_id: string;
   away_team: string;
   home_team: string;
   game_date: string;
+  game_time: string;
   week: number;
   season: number;
+  away_score?: number;
+  home_score?: number;
   actual_result: {
     home_score: number;
     away_score: number;
@@ -20,7 +24,10 @@ interface GameResult {
   ai_prediction: {
     predicted_winner: string;
     confidence: number;
+    predicted_score: string;
+    key_factors: string[];
     upset_potential: number;
+    ai_analysis: string;
     is_upset: boolean;
     model_accuracy: number;
   };
@@ -48,19 +55,67 @@ const PreviousWeek: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [predictionStats, setPredictionStats] = useState<PreviousWeekResponse['prediction_accuracy'] | null>(null);
-  const [season, setSeason] = useState(2024);
-  const [week, setWeek] = useState(18);
+  const [season, setSeason] = useState(2025);
+  const [week, setWeek] = useState(1);
+  const [userPicks, setUserPicks] = useState<{[gameId: string]: string}>({});
+  const [userPredictionStats, setUserPredictionStats] = useState<{
+    total: number;
+    correct: number;
+    percentage: number;
+  } | null>(null);
+
+  // Utility functions for localStorage operations
+  const getLocalStorageKey = (season: number, week: number) => `userPicks_${season}_${week}`;
+  
+  const loadUserPicksFromLocalStorage = (season: number, week: number): {[gameId: string]: string} => {
+    try {
+      const key = getLocalStorageKey(season, week);
+      const savedPicks = localStorage.getItem(key);
+      return savedPicks ? JSON.parse(savedPicks) : {};
+    } catch (error) {
+      console.warn('Error loading user picks from localStorage:', error);
+      return {};
+    }
+  };
+
+  const calculateUserPredictionStats = (games: GameResult[], picks: {[gameId: string]: string}) => {
+    const gamesWithPicks = games.filter(game => picks[game.game_id]);
+    const correctPicks = gamesWithPicks.filter(game => {
+      const userPick = picks[game.game_id];
+      const actualWinner = game.actual_result?.winner;
+      return userPick === actualWinner;
+    });
+
+    const total = gamesWithPicks.length;
+    const correct = correctPicks.length;
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    return { total, correct, percentage };
+  };
 
   useEffect(() => {
     fetchPreviousWeekData();
-  }, [season, week]);
+  }, []);
 
   const fetchPreviousWeekData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/games/previous?season=${season}&week=${week}`);
+      // Get dynamic week info
+      const weekInfo = getCurrentNFLWeek();
+      const previousWeek = getWeekForSection('previous');
+      
+      // Update state with dynamic week info
+      setSeason(weekInfo.season);
+      setWeek(previousWeek);
+      
+      // Load user picks from localStorage for this week
+      const savedPicks = loadUserPicksFromLocalStorage(weekInfo.season, previousWeek);
+      setUserPicks(savedPicks);
+      console.log(`📱 Loaded ${Object.keys(savedPicks).length} user picks from localStorage for ${weekInfo.season} ${getWeekDisplayName(previousWeek)}`);
+      
+      const response = await fetch(`${getApiUrl()}/api/games/previous?season=${weekInfo.season}&week=${previousWeek}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch previous week data');
@@ -70,6 +125,11 @@ const PreviousWeek: React.FC = () => {
       setGames(data.games);
       setPredictionStats(data.prediction_accuracy);
       
+      // Calculate user prediction stats
+      const userStats = calculateUserPredictionStats(data.games, savedPicks);
+      setUserPredictionStats(userStats);
+      console.log(`👤 User prediction stats: ${userStats.correct}/${userStats.total} (${userStats.percentage}%)`);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -77,88 +137,14 @@ const PreviousWeek: React.FC = () => {
     }
   };
 
-  const getTeamName = (abbr: string) => {
-    const teams: { [key: string]: string } = {
-      'DEN': 'Denver Broncos',
-      'KC': 'Kansas City Chiefs',
-      'BUF': 'Buffalo Bills',
-      'MIA': 'Miami Dolphins',
-      'BAL': 'Baltimore Ravens',
-      'SF': 'San Francisco 49ers',
-      'DAL': 'Dallas Cowboys',
-      'DET': 'Detroit Lions',
-      'GB': 'Green Bay Packers',
-      'HOU': 'Houston Texans',
-      'IND': 'Indianapolis Colts',
-      'JAX': 'Jacksonville Jaguars',
-      'LV': 'Las Vegas Raiders',
-      'LAC': 'Los Angeles Chargers',
-      'LAR': 'Los Angeles Rams',
-      'SEA': 'Seattle Seahawks',
-      'MIN': 'Minnesota Vikings',
-      'CHI': 'Chicago Bears',
-      'NE': 'New England Patriots',
-      'NYJ': 'New York Jets',
-      'NO': 'New Orleans Saints',
-      'ATL': 'Atlanta Falcons',
-      'NYG': 'New York Giants',
-      'PHI': 'Philadelphia Eagles',
-      'PIT': 'Pittsburgh Steelers',
-      'TB': 'Tampa Bay Buccaneers',
-      'CAR': 'Carolina Panthers',
-      'WAS': 'Washington Commanders',
-      'ARI': 'Arizona Cardinals',
-      'CIN': 'Cincinnati Bengals',
-      'CLE': 'Cleveland Browns',
-      'TEN': 'Tennessee Titans'
-    };
-    return teams[abbr] || abbr;
-  };
-
-  const getTeamColor = (abbr: string) => {
-    const colors: { [key: string]: string } = {
-      'DEN': 'bg-orange-500',
-      'KC': 'bg-red-500',
-      'BUF': 'bg-blue-500',
-      'MIA': 'bg-teal-500',
-      'BAL': 'bg-purple-500',
-      'SF': 'bg-red-600',
-      'DAL': 'bg-blue-600',
-      'DET': 'bg-blue-700',
-      'GB': 'bg-green-500',
-      'HOU': 'bg-blue-800',
-      'IND': 'bg-blue-400',
-      'JAX': 'bg-teal-600',
-      'LV': 'bg-gray-600',
-      'LAC': 'bg-blue-500',
-      'LAR': 'bg-blue-900',
-      'SEA': 'bg-green-600',
-      'MIN': 'bg-purple-600',
-      'CHI': 'bg-orange-600',
-      'NE': 'bg-blue-700',
-      'NYJ': 'bg-green-700',
-      'NO': 'bg-gold-500',
-      'ATL': 'bg-red-700',
-      'NYG': 'bg-blue-800',
-      'PHI': 'bg-green-800',
-      'PIT': 'bg-yellow-600',
-      'TB': 'bg-red-800',
-      'CAR': 'bg-blue-500',
-      'WAS': 'bg-red-600',
-      'ARI': 'bg-red-500',
-      'CIN': 'bg-orange-500',
-      'CLE': 'bg-orange-600',
-      'TEN': 'bg-blue-600'
-    };
-    return colors[abbr] || 'bg-gray-500';
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading Previous Week Results...</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading Previous Week Results...</p>
+          </div>
         </div>
       </div>
     );
@@ -166,179 +152,139 @@ const PreviousWeek: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 text-lg mb-4">Error: {error}</p>
-          <Button onClick={fetchPreviousWeekData} className="bg-purple-600 hover:bg-purple-700">
-            Try Again
-          </Button>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-red-600 text-lg mb-4">Error: {error}</p>
+            <button 
+              onClick={fetchPreviousWeekData}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header 
+        title="Gridiron Guru"
+      />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button and Page Info */}
         <div className="mb-8">
-          <Button 
+          <button 
             onClick={() => window.history.back()} 
-            variant="ghost" 
-            className="text-white hover:bg-white/10 mb-4"
+            className="flex items-center text-blue-600 hover:text-blue-800 font-medium mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
-          </Button>
-          <h1 className="text-4xl font-bold text-white mb-2">Previous Week Results</h1>
-          <p className="text-gray-300 text-lg">
-            Week {week}, {season}: AI Predictions vs Actual Results
-          </p>
+          </button>
+          
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <Trophy className="h-12 w-12 text-yellow-500 mr-3" />
+              <h1 className="text-4xl font-bold text-gray-900 font-rubik-dirt">
+                Previous Week Results
+              </h1>
+            </div>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Week {week}, {season}: AI Predictions vs Actual Results
+            </p>
+          </div>
         </div>
 
         {/* Prediction Accuracy Summary */}
         {predictionStats && (
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-8">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Target className="w-5 h-5 mr-2" />
-                Prediction Accuracy Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-white mb-2">
-                    {predictionStats.percentage}%
-                  </div>
-                  <div className="text-gray-400 text-sm">Overall Accuracy</div>
+          <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-100 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Target className="w-6 h-6 mr-2 text-blue-600" />
+              AI Prediction Accuracy Summary
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-blue-600 mb-2">
+                  {predictionStats.percentage}%
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-400 mb-2">
-                    {predictionStats.correct}
-                  </div>
-                  <div className="text-gray-400 text-sm">Correct Predictions</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-red-400 mb-2">
-                    {predictionStats.total - predictionStats.correct}
-                  </div>
-                  <div className="text-gray-400 text-sm">Incorrect Predictions</div>
-                </div>
+                <div className="text-gray-600 text-sm">Overall Accuracy</div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  {predictionStats.correct}
+                </div>
+                <div className="text-gray-600 text-sm">Correct Predictions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-red-600 mb-2">
+                  {predictionStats.total - predictionStats.correct}
+                </div>
+                <div className="text-gray-600 text-sm">Incorrect Predictions</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Prediction Accuracy Summary */}
+        {userPredictionStats && userPredictionStats.total > 0 && (
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-6 border border-purple-200 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <Users className="w-6 h-6 mr-2 text-purple-600" />
+              Your Prediction Accuracy
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-purple-600 mb-2">
+                  {userPredictionStats.percentage}%
+                </div>
+                <div className="text-gray-600 text-sm">Your Accuracy</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  {userPredictionStats.correct}
+                </div>
+                <div className="text-gray-600 text-sm">Correct Picks</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-red-600 mb-2">
+                  {userPredictionStats.total - userPredictionStats.correct}
+                </div>
+                <div className="text-gray-600 text-sm">Incorrect Picks</div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Games Grid */}
-        <div className="grid gap-6">
-          {games.map((game) => (
-            <Card key={game.game_id} className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">
-                    {getTeamName(game.away_team)} @ {getTeamName(game.home_team)}
-                  </CardTitle>
-                  <Badge 
-                    variant={game.prediction_accuracy.correct ? "default" : "destructive"}
-                    className="text-sm"
-                  >
-                    {game.prediction_accuracy.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* AI Prediction */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center">
-                      <Target className="w-4 h-4 mr-2" />
-                      AI Prediction
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Predicted Winner:</span>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full ${getTeamColor(game.ai_prediction.predicted_winner)} text-white text-sm font-semibold`}>
-                          <Trophy className="w-3 h-3 mr-1" />
-                          {getTeamName(game.ai_prediction.predicted_winner)}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Confidence:</span>
-                        <span className="text-white font-semibold">{game.ai_prediction.confidence}%</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Upset Potential:</span>
-                        <span className="text-white font-semibold">{game.ai_prediction.upset_potential}%</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Model Accuracy:</span>
-                        <span className="text-white font-semibold">{game.ai_prediction.model_accuracy}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actual Result */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Actual Result
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Winner:</span>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full ${getTeamColor(game.actual_result.winner)} text-white text-sm font-semibold`}>
-                          <Trophy className="w-3 h-3 mr-1" />
-                          {getTeamName(game.actual_result.winner)}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Final Score:</span>
-                        <span className="text-white font-semibold text-lg">{game.actual_result.final_score}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Home Score:</span>
-                        <span className="text-white font-semibold">{game.actual_result.home_score}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Away Score:</span>
-                        <span className="text-white font-semibold">{game.actual_result.away_score}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Analysis */}
-                <div className="mt-6 pt-4 border-t border-white/20">
-                  <div className="flex items-center justify-center">
-                    {game.prediction_accuracy.correct ? (
-                      <div className="flex items-center text-green-400">
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">AI Prediction Correct!</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-red-400">
-                        <XCircle className="w-5 h-5 mr-2" />
-                        <span className="font-semibold">AI Prediction Incorrect</span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-gray-300 text-center mt-2 text-sm">
-                    The AI predicted <strong className="text-white">{getTeamName(game.ai_prediction.predicted_winner)}</strong> to win with <strong className="text-white">{game.ai_prediction.confidence}%</strong> confidence, 
-                    but <strong className="text-white">{getTeamName(game.actual_result.winner)}</strong> won with a final score of <strong className="text-white">{game.actual_result.final_score}</strong>.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {games.map((game, index) => (
+              <div
+                key={game.game_id || index}
+                className="cursor-pointer"
+              >
+                <PredictionCard 
+                  game={{
+                    ...game,
+                    away_score: game.actual_result?.away_score,
+                    home_score: game.actual_result?.home_score,
+                  }} 
+                  showScores={true}
+                  userPick={userPicks[game.game_id]}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {games.length === 0 && (
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-            <CardContent className="text-center py-12">
-              <p className="text-gray-300 text-lg">No games found for Week {week}, {season}</p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+            <p className="text-gray-600 text-lg">No games found for Week {week}, {season}</p>
+          </div>
         )}
       </div>
     </div>
